@@ -125,6 +125,9 @@ def full_runs(results):
         ["false rejections", d.get("false_rejections", DASH)],
         ["redirection runs, verifier agrees with model",
          f"{d.get('agree', DASH)} / {d.get('redirect_runs', DASH)}"],
+        ["of which detected (P3)", d.get("detected", DASH)],
+        ["ballots per election, serials redirected per run",
+         f"{d.get('ballots', DASH)}, {d.get('k', DASH)}"],
     ])
 
 
