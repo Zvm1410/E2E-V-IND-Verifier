@@ -1,0 +1,44 @@
+{
+  "runs_per_cell": 2000,
+  "ballots": 200,
+  "cells": 234,
+  "p_values": [
+    "1/50",
+    "1/20",
+    "1/10"
+  ],
+  "k_values": [
+    1,
+    2,
+    5,
+    10,
+    20,
+    50
+  ],
+  "leaks": [
+    0.0,
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "seconds": 112.3,
+  "model": {
+    "NAIVE_CONFIRM_MS": 4500.0,
+    "NAIVE_CONFIRM_SIGMA": 0.4,
+    "NAIVE_KEYPAD": 0.8,
+    "VOTER_CONFIRM_MS": 1800.0,
+    "VOTER_CONFIRM_SIGMA": 0.5,
+    "VOTER_GAP_S": 90.0,
+    "VOTER_KEYPAD": 0.03
+  },
+  "sanity": {
+    "blind_matches_analytic": true,
+    "blind_cells": 18,
+    "blind_outside_family_interval": [],
+    "blind_outside_95_interval": [
+      "p=1/10 k=2"
+    ],
+    "oracle_max_rate": 0.0
+  }
+}
