@@ -21,7 +21,7 @@ the signatures run_election.py uses.
 
 A full run takes hours on a Pi; progress and an estimate print every 25 ballots.
 
-Writes results/bench_<host>_<timestamp>.csv (one row per ballot) and a
+Writes results/bench_<architecture>_<timestamp>.csv (one row per ballot) and a
 .json summary next to it.
 """
 
@@ -150,7 +150,6 @@ def summarise(rows, m_values, args):
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     rss_mb = rss / 1024 if sys.platform != "darwin" else rss / (1024 * 1024)
     return {
-        "host": platform.node(),
         "machine": platform.machine(),
         "platform": platform.platform(),
         "python": platform.python_version(),
@@ -183,7 +182,8 @@ def main(argv=None):
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    stem = f"bench_{platform.node()}_{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
+    # The machine architecture, not the hostname, so result files identify no one.
+    stem = f"bench_{platform.machine()}_{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
     with open(out / f"{stem}.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]))
         writer.writeheader()

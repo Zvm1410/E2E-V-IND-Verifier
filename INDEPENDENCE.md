@@ -19,7 +19,10 @@ this repository. This file records the evidence.
 ## The freeze
 
 The verifier was frozen at commit `f9b5dba`, before `crypto/` and `tally/` were
-added (commit `2343598`). At the freeze its files hashed as follows:
+added (commit `2343598`). The timestamped development history containing these
+commits is withheld from the anonymised review copy of this repository and
+will be released with the camera-ready version. At the freeze the verifier's
+files hashed as follows:
 
 ```
 f7ea53ab716a647dbede20b1d35a94e152d81937ce319ac6d9c9d082cb2fe2b9  verifier/__init__.py
@@ -43,6 +46,7 @@ python scripts/check_verifier_unchanged.py
 ```
 
 parses every verifier file at the freeze commit and in the working tree,
-discards comments and docstrings, and compares the code. Since the freeze,
+discards comments and docstrings, and compares the code. It needs the full
+history; in the review copy it reports that the freeze commit is absent. Since the freeze,
 only documentation and the wording of two messages have changed; the script
 lists both, and reports any change to code.

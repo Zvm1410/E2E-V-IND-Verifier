@@ -1,0 +1,7 @@
+# Keep exact bytes: board files are checked against signatures over their
+# canonical serialisation, and the vectors are compared byte for byte.
+tests/fixtures/** -text
+spec/vectors/** -text
+results/** -text
+*.json -text
+*.sh text eol=lf

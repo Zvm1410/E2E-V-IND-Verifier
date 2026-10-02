@@ -69,7 +69,7 @@ The verifier prints `Accept`, or `Reject` with the failing property and
 record, and the state of each of P1 to P5: passed, failed, not exercised or
 not checked.
 
-`./make_bundles.sh` builds all seven scenarios: a clean election, one per
+`bash make_bundles.sh` builds all seven scenarios: a clean election, one per
 attack, and C1.
 
 ## Evaluation

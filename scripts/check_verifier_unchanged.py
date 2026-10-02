@@ -9,7 +9,8 @@ can be read.
 
     python scripts/check_verifier_unchanged.py [FREEZE_COMMIT]
 
-Exit status 0 means no code change; 1 means a code change was found.
+Exit status 0 means no code change, 1 a code change, 2 that the freeze commit
+is not in this checkout.
 """
 
 import ast
@@ -44,6 +45,13 @@ def _masked(tree):
 
 def main(argv):
     freeze = argv[1] if len(argv) > 1 else FREEZE
+    present = subprocess.run(["git", "cat-file", "-e", f"{freeze}^{{commit}}"], cwd=ROOT,
+                             capture_output=True).returncode == 0
+    if not present:
+        print(f"Freeze commit {freeze} is not in this checkout. The anonymised review "
+              "copy omits the development history (see INDEPENDENCE.md); run this "
+              "script on the full repository.")
+        return 2
     listed = subprocess.run(["git", "ls-tree", "-r", "--name-only", freeze, "verifier/"],
                             cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
     now = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "verifier").glob("*.py"))
