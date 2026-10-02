@@ -188,7 +188,7 @@ class AdminScreen(QWidget):
             self.challenge_output.setPlainText("No ballot available to challenge.")
             return
 
-        if artifacts.serial not in service.scheduled_tests:
+        if artifacts.serial not in self.window.testing_authority.schedule:
             # SPEC 10.2: only scheduled serials are challenged. A spoil on any
             # other serial is a P3 failure on the board.
             self.challenge_output.setPlainText(
@@ -251,14 +251,13 @@ class AdminScreen(QWidget):
     # ------------------------------------------------------------------
 
     def close_poll(self) -> None:
-        """Publish pre-poll commitments + reveal schedule seed + write
-        the poll register to the in-memory board. After this, the
-        service.board dict has everything except the tally and
-        signatures."""
+        """Publish the testing authority's schedule seed and write the poll
+        register to the in-memory board. The pre-poll section was published
+        when the kiosk started. After this, the board has everything except
+        the tally and signatures."""
         svc = self.window.ballot_service
         try:
-            svc.publish_pre_poll_commitments()
-            svc.reveal_schedule_and_publish_register()
+            svc.reveal_schedule_and_publish_register(self.window.testing_authority.reveal())
             reg = self.window.poll_state.poll_register()
             self.lifecycle_output.setPlainText(
                 f"Poll closed.\n"

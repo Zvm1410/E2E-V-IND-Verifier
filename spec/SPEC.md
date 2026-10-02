@@ -409,6 +409,8 @@ The board carries `K_s` for every serial in `1..ballots_expected`, published in 
 
 The test schedule is drawn before the poll from a seed, and the seed is committed before the poll and revealed at close. A schedule decided live by the tester cannot be audited and gives adversary A3 nothing coherent to partially leak.
 
+The seed is generated off the machine by the testing authority, the party that runs the in-poll tests, from a cryptographic source. The machine is given only `T`, which it publishes in the pre-poll section; the authority keeps the seed, gives the tester the list of scheduled serials, and publishes the seed at close. A machine that held the seed could compute the schedule and manipulate exactly the ballots that will never be challenged, which is the AOracle adversary.
+
 ```
 T = SHA-256(
       L("EVOTE-TESTSCHED-v1")        32 bytes
@@ -812,6 +814,8 @@ Applied by basket D, which holds sole editorial authority from this revision. No
 **5. Pre-poll implementation brought to sections 10.1 and 10.2.** The machine's `K_s` omitted the label and Q, `T` was `SHA-256(schedule_seed)`, the schedule was drawn by a different rule, and spoils were topped up with unscheduled serials. Fixed in the machine and integration code; no change to this document's constructions.
 
 **3. Section 19 item 3 discharged.** The malformed ballot hook is B12.
+
+**6. The schedule seed is held by the testing authority, section 10.2.** The machine generated the seed from the same deterministic source as the ballot randomness, so compromised firmware could compute the schedule. The seed is now generated off the machine and only `T` is given to it. No change to `T`, the draw, or any record.
 
 ### Outstanding
 

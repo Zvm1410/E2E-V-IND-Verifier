@@ -79,10 +79,10 @@ def full_runs(repo, clean, redirect, ballots, k, base_seed):
         for n, (kind, i) in enumerate(jobs, 1):
             seed = base_seed + (0 if kind == "clean" else 100_000) + i
             out = Path(tmp) / f"{kind}-{i}"
-            extra = ()
+            extra = ("--authority-seed", str(seed))
             if kind == "redirect":
                 targets = sorted(rng.sample(range(1, ballots + 1), k))
-                extra = ("--redirect-serials", ",".join(map(str, targets)))
+                extra += ("--redirect-serials", ",".join(map(str, targets)))
             started = time.time()
             _run_election(repo, _config_with_seed(repo, seed, tmp), ballots, out, extra)
             result = _verify_dir(out)

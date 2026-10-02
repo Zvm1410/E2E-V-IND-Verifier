@@ -189,7 +189,10 @@ class BallotService:
         self._encrypted_index_by_serial: Dict[int, int] = {}
 
         # ---- pre-poll randomness state ---------------------------------
-        # Public: per-serial commitments (SHA-256 hex) and schedule commit.
+        # Public: per-serial commitments (SHA-256 hex). The test-schedule
+        # commitment T is generated off the machine by the testing authority
+        # (testing_authority.py) and loaded with load_schedule_commitment();
+        # the machine never holds the seed or the schedule before close.
         self.pre_poll_commitments: Dict[int, str] = {}
         self.schedule_commitment: Optional[str] = None
         # Publicly revealed at poll close (empty until then).
@@ -201,8 +204,6 @@ class BallotService:
         # SECRET integer form of the randomness vectors, used by Basket B's
         # encrypt_and_prove. Never written to the board, never exported.
         self._r_int: Dict[int, List[int]] = {}
-        # Deterministic test schedule (set of scheduled test serials).
-        self.scheduled_tests: set[int] = set()
 
         # ---- election setup: trusted dealer + authorities + base hash --
         self.trustee_setup: TrusteeSetup = run_dealer(
@@ -289,7 +290,7 @@ class BallotService:
     # ------------------------------------------------------------------
 
     def _prepare_pre_poll(self) -> None:
-        """Draw randomness vectors and the test-schedule seed.
+        """Draw the randomness vector and nonce for every serial.
 
         Deterministic on ``self.config.seed`` for replay.
 
@@ -301,9 +302,7 @@ class BallotService:
                           || U64(serial) || I2B(r_1) || ... || I2B(r_m)
                           || nonce)                        (SPEC 10.1)
 
-        The schedule seed is a 32-byte value drawn from the same RNG and
-        committed as T of SPEC 10.2. Serial s is a test ballot iff the
-        SPEC 10.2 per-serial draw selects it.
+        The test schedule is not drawn here: see testing_authority.py.
         """
         ballots = int(self.config.ballots_expected)
         m = self.config.candidate_count
@@ -340,26 +339,6 @@ class BallotService:
             self.pre_poll_randomness[s] = r_hex
             self.pre_poll_nonces[s] = nonce_hex
             self.pre_poll_commitments[s] = commitment
-
-        # Schedule seed and its commitment (SPEC section 10.2).
-        sched = rng.randbytes(32)
-        if all(b == 0 for b in sched):
-            sched = b"\x01" + rng.randbytes(31)
-        # NOTE: schedule seed is SECRET until poll close.
-        self._schedule_seed_raw: bytes = sched
-        num, den = self.config.test_rate_num, self.config.test_rate_den
-        self.schedule_commitment = hashlib.sha256(
-            L("EVOTE-TESTSCHED-v1") + self.Q + booth_bytes + sched
-            + num.to_bytes(8, "big") + den.to_bytes(8, "big")
-        ).hexdigest()
-
-        # Derive the test schedule (SPEC 10.2).
-        self.scheduled_tests = _derive_schedule(
-            seed=sched,
-            ballots_expected=ballots,
-            num=num,
-            den=den,
-        )
 
     # ------------------------------------------------------------------
     # A5: encrypt + prove
@@ -657,6 +636,13 @@ class BallotService:
     # Pre-poll section publication (before poll opens)
     # ------------------------------------------------------------------
 
+    def load_schedule_commitment(self, commitment_hex: str) -> None:
+        """Accept T from the testing authority, before the poll opens."""
+        if (not isinstance(commitment_hex, str) or len(commitment_hex) != 64
+                or any(c not in "0123456789abcdef" for c in commitment_hex)):
+            raise ValueError("schedule commitment must be 64 lowercase hex characters")
+        self.schedule_commitment = commitment_hex
+
     def publish_pre_poll_commitments(self) -> None:
         """Publish per-serial randomness commitments + test schedule commit.
 
@@ -678,20 +664,21 @@ class BallotService:
         bb.append_prepoll(
             self.board,
             randomness_commitments=commits,
-            test_schedule_commitment=self.schedule_commitment or "",
+            test_schedule_commitment=self._require_schedule_commitment(),
         )
 
-    def reveal_schedule_and_publish_register(self) -> None:
-        """Reveal the schedule seed at close and publish the poll register.
+    def _require_schedule_commitment(self) -> str:
+        if self.schedule_commitment is None:
+            raise RuntimeError("load the testing authority's schedule commitment "
+                               "before publishing the pre-poll section")
+        return self.schedule_commitment
 
-        SPEC section 10.2 (schedule opening) + SPEC section 12 (poll
-        register).
-        """
-        if self.schedule_commitment is not None and hasattr(
-            self, "_schedule_seed_raw"
-        ):
-            self.schedule_seed = self._schedule_seed_raw.hex()
-            bb.append_schedule_opening(self.board, self.schedule_seed)
+    def reveal_schedule_and_publish_register(self, schedule_seed_hex: str) -> None:
+        """At close: publish the seed the testing authority reveals (SPEC
+        10.2), then the poll register (SPEC 12)."""
+        self._require_schedule_commitment()
+        self.schedule_seed = schedule_seed_hex
+        bb.append_schedule_opening(self.board, self.schedule_seed)
         self.append_register()
 
     def append_register(self) -> None:
@@ -879,28 +866,3 @@ def _empty_board() -> Dict[str, Any]:
         "decryption_transcript": {},
         "tally_declaration": {},
     }
-
-
-def _derive_schedule(
-    seed: bytes,
-    ballots_expected: int,
-    num: int,
-    den: int,
-) -> set[int]:
-    """SPEC 10.2: serial s is a test ballot iff
-
-        B2I(SHA-256(L("EVOTE-TESTDRAW-v1") || seed || U64(s))[0:8]) * den
-            < num * 2^64
-
-    Each serial is drawn independently, so the number of test ballots
-    varies around num/den * N rather than being fixed. Exact integer
-    arithmetic; no floating point reaches the comparison.
-    """
-    picks: set[int] = set()
-    for s in range(1, ballots_expected + 1):
-        digest = hashlib.sha256(
-            L("EVOTE-TESTDRAW-v1") + seed + s.to_bytes(8, "big")
-        ).digest()
-        if int.from_bytes(digest[:8], "big") * den < num * 2**64:
-            picks.add(s)
-    return picks

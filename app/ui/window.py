@@ -37,6 +37,20 @@ class MainWindow(QMainWindow):
 
         self.ballot_service = BallotService(self.config, self.poll_state)
 
+        # The testing authority holds the schedule seed (testing_authority.py).
+        # In a deployment it is a separate device and only T is entered here;
+        # the kiosk plays that role for demonstrations. The machine's code
+        # receives T now and the seed only at close.
+        from testing_authority import TestingAuthority
+        self.testing_authority = TestingAuthority(
+            self.ballot_service.Q, self.config.booth_id,
+            self.config.test_rate_num, self.config.test_rate_den,
+            self.config.ballots_expected,
+        )
+        self.ballot_service.load_schedule_commitment(self.testing_authority.commitment)
+        # SPEC 10: the pre-poll section is on the board before any ballot is cast.
+        self.ballot_service.publish_pre_poll_commitments()
+
         self.setWindowTitle(f"{self.config.election_id} — {self.config.booth_id}")
         self._apply_screen_fit()
 

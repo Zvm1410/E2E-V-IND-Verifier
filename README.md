@@ -7,8 +7,8 @@ evaluation behind the paper.
 A vote is a vector of exponential-ElGamal ciphertexts over the 3072-bit RFC
 3526 group, one per candidate, each with a Cramer-Damgard-Schoenmakers proof
 that it encrypts 0 or 1 and a Chaum-Pedersen proof that the vector sums to one.
-The machine commits to every ballot's randomness and to a test schedule
-before the poll opens; scheduled ballots are challenged and opened, which is
+The machine commits to every ballot's randomness before the poll opens, and
+an off-machine testing authority commits to a test schedule; scheduled ballots are challenged and opened, which is
 what catches a machine that redirects votes. Trustees decrypt only the
 per-candidate aggregates, with proofs. Everything is published on a signed
 bulletin board that a verifier checks property by property.
@@ -26,6 +26,7 @@ The normative description is [`spec/SPEC.md`](spec/SPEC.md) (revision 3).
 | `tally/` | Trusted dealer, Shamir sharing, threshold decryption, decryption proofs | C |
 | `board/` | Bulletin board, digest, Ed25519 multisignature, export checks | C |
 | `run_election.py` | One election end to end, with the attack flags | C |
+| `testing_authority.py` | Off-machine holder of the test-schedule seed (SPEC 10.2) | D |
 | `export_bundle.py`, `make_bundles.sh` | Package and regenerate the evaluation boards | C, D |
 | `verifier/` | Independent verifier, P1 to P5 with attribution | D |
 | `harness/` | Simulated elections (D8), sweep (D9), full-crypto runs (D10), tables (D11), Pi benchmark | D |

@@ -69,6 +69,9 @@ def main() -> int:
                         help="If >0, enable A9 ballot-stuffing hook with N ballots.")
     parser.add_argument("--redirect-to", type=int, default=None,
                         help="If set, enable A8 vote-redirection to this index.")
+    parser.add_argument("--authority-seed", type=int, default=None,
+                        help="Reproducible testing-authority seed (simulation only); "
+                             "default draws 32 bytes from the OS.")
     parser.add_argument("--redirect-serials", type=str, default=None,
                         help="Comma-separated serials to redirect, each to the next "
                              "candidate after the voter's choice (harness full runs).")
@@ -112,8 +115,17 @@ def main() -> int:
     service = BallotService(cfg, poll_state)
     print(f"    pk              : {service.trustee_setup.pk.bit_length()}-bit public key")
     print(f"    base hash Q     : {service.Q.hex()[:32]}...")
-    print(f"    schedule commit : {service.schedule_commitment[:32]}...")
-    print(f"    scheduled tests : {sorted(service.scheduled_tests)}")
+
+    # The testing authority generates the schedule seed off the machine
+    # (testing_authority.py) and gives the machine only the commitment T.
+    from testing_authority import TestingAuthority, seed_from_int
+    authority = TestingAuthority(
+        service.Q, cfg.booth_id, cfg.test_rate_num, cfg.test_rate_den,
+        cfg.ballots_expected,
+        seed=None if args.authority_seed is None else seed_from_int(args.authority_seed),
+    )
+    service.load_schedule_commitment(authority.commitment)
+    print(f"    schedule commit : {authority.commitment[:32]}...  (from the testing authority)")
 
     # -------- Attack hooks (optional) --------------------------------
     if args.redirect_to is not None:
@@ -141,7 +153,7 @@ def main() -> int:
     # The tester challenges exactly the serials the committed schedule
     # drew (SPEC 10.2), no more and no fewer. A spoil on any other serial,
     # or a scheduled serial left unchallenged, is a P3 failure.
-    spoil_serials = {s for s in service.scheduled_tests
+    spoil_serials = {s for s in authority.schedule
                      if 1 <= s <= ballots_to_cast}
     print(f"[5] Casting {ballots_to_cast} ballots "
           f"({len(spoil_serials)} scheduled for challenge: {sorted(spoil_serials)})")
@@ -217,7 +229,7 @@ def main() -> int:
 
     # -------- 6. Close poll ------------------------------------------
     print("[6] Closing poll: revealing schedule seed, writing poll register")
-    service.reveal_schedule_and_publish_register()
+    service.reveal_schedule_and_publish_register(authority.reveal())
     reg = poll_state.poll_register()
     print(f"    ballots_issued  : {reg['ballots_issued']}")
     print(f"    ballots_spoiled : {reg['ballots_spoiled']}")

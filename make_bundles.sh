@@ -4,12 +4,16 @@
 set -euo pipefail
 
 BALLOTS="${BALLOTS:-60}"
+# Fixed so the bundles are reproducible; at 60 ballots and p = 1/20 it draws
+# serials 19, 48, 53 and 57 (computed with SPEC 10.2's draw).
+AUTHORITY_SEED="${AUTHORITY_SEED:-1}"
 
 run() {
     local tag="$1" config="$2"; shift 2
     echo "=== $tag"
     rm -rf "out-$tag"
-    python run_election.py --config "$config" --ballots "$BALLOTS" --out-dir "out-$tag" "$@"
+    python run_election.py --config "$config" --ballots "$BALLOTS" --out-dir "out-$tag" \
+        --authority-seed "$AUTHORITY_SEED" "$@"
     python export_bundle.py \
         --board "out-$tag/board.json" --sigs "out-$tag/signatures.json" \
         --tester "out-$tag/tester_selections.json" --config "$config" \
