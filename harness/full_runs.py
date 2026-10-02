@@ -100,7 +100,7 @@ def _one_run(job):
     return record
 
 
-def full_runs(repo, clean, redirect, ballots, k, base_seed, procs):
+def full_runs(repo, clean, redirect, ballots, k, base_seed, procs, save=None):
     rng = random.Random(base_seed)
     results = {"ballots": ballots, "k": k, "clean_runs": 0, "false_rejections": 0,
                "redirect_runs": 0, "agree": 0, "detected": 0, "runs": []}
@@ -124,6 +124,9 @@ def full_runs(repo, clean, redirect, ballots, k, base_seed, procs):
                               f"{record['predicted_detection']}, verifier "
                               f"{record['failed_property'] or 'Accept'}")
                 results["runs"].append(record)
+                if save:
+                    # Saved after every election, so a stopped run keeps what it finished.
+                    save(results)
                 verdict = "Accept" if record["accepted"] else record["failed_property"]
                 print(f"[{n}/{len(jobs)}] {record['kind']} seed {record['seed']}: {verdict} "
                       f"({record['seconds']} s)", flush=True)
@@ -169,9 +172,11 @@ def main(argv=None):
         data = attribution(args.attribution)
         (results_dir / "attribution.json").write_text(json.dumps(data, indent=2) + "\n")
     if args.clean or args.redirect:
+        out_path = results_dir / "full_runs.json"
         data = full_runs(args.repo, args.clean, args.redirect, args.ballots, args.k, args.seed,
-                         args.procs)
-        (results_dir / "full_runs.json").write_text(json.dumps(data, indent=2) + "\n")
+                         args.procs,
+                         save=lambda r: out_path.write_text(json.dumps(r, indent=2) + "\n"))
+        out_path.write_text(json.dumps(data, indent=2) + "\n")
         print(f"\nclean: {data['clean_runs']} runs, {data['false_rejections']} false rejections")
         print(f"redirect: verifier agrees with the model on {data['agree']} of "
               f"{data['redirect_runs']} ({data['detected']} detected)")
