@@ -30,10 +30,10 @@ def _signature_valid(public_key, signature, message):
         return False
 
 
-def check_board_integrity(raw_bytes, board_obj, board, signatures):
-    """P1. `raw_bytes` is the board file as received, `board_obj` its JSON,
-    `board` the parsed records, `signatures` the parsed signature file.
-    Returns the recomputed digest."""
+def check_signed_digest(raw_bytes, board_obj, keys, signatures):
+    """P1, byte level: canonical form, digest, officer and k agent signatures.
+    Runs before the rest of the board is parsed, so a retroactive edit is
+    named P1 even if it also left a record malformed. Returns the digest."""
     canonical = canonical_bytes(board_obj)
     if canonical != raw_bytes:
         raise CheckFailure("P1", "board", "file is not in canonical serialisation")
@@ -43,7 +43,6 @@ def check_board_integrity(raw_bytes, board_obj, board, signatures):
                            "recomputed board digest differs from the signed digest")
 
     message = label("EVOTE-SIG-v1") + digest
-    keys = board.authority_keys
     if not _signature_valid(keys.officer, signatures.officer_signature, message):
         raise CheckFailure("P1", "signatures.officer_signature", "officer signature invalid")
     valid_agents = set()
@@ -58,8 +57,12 @@ def check_board_integrity(raw_bytes, board_obj, board, signatures):
     if len(valid_agents) < keys.k:
         raise CheckFailure("P1", "signatures.agent_signatures",
                            f"{len(valid_agents)} distinct valid agent signatures, need {keys.k}")
+    return digest
 
-    c, ts = board.config, board.trustee_setup
+
+def check_parameters(board):
+    """P1, record level: config cross-references and Q recomputed."""
+    c, ts, keys = board.config, board.trustee_setup, board.authority_keys
     if (ts.n, ts.t) != (c.n, c.t) or len(ts.commitments) != c.n:
         raise CheckFailure("P1", "trustee_setup", "n or t disagrees with election_config")
     if keys.k != c.k or len(keys.agents) != c.agents:
@@ -68,6 +71,12 @@ def check_board_integrity(raw_bytes, board_obj, board, signatures):
                   ts.public_key, ts.commitments, keys.k, keys.officer, keys.agents)
     if q != board.base_hash:
         raise CheckFailure("P1", "base_hash", "Q does not recompute from the published parameters")
+
+
+def check_board_integrity(raw_bytes, board_obj, board, signatures):
+    """All of P1 on an already parsed board. Returns the digest."""
+    digest = check_signed_digest(raw_bytes, board_obj, board.authority_keys, signatures)
+    check_parameters(board)
     return digest
 
 
