@@ -446,6 +446,14 @@ Verification of one spoil record:
 
 A spoiled ballot's validity proofs are still checked in the ordinary way. A spoiled ballot is still counted in the poll register.
 
+### 11.1 The tester's comparison (proposed, revision 3)
+
+A machine that redirects a vote and is then challenged has two choices. If it opens a candidate other than the one it encrypted, check 1 fails and the board alone shows it. If it opens truthfully, every record on the board is consistent, and the only evidence is that the opened index differs from what the tester pressed. That comparison is made by the tester at the booth, in the standard Benaloh challenge: the machine displays the opened candidate index, and the tester checks it against their own selection before the ballot is spoiled.
+
+The tester's selection is not written to the board. The machine writes the board, so a compromised machine would write a selection that matches what it opened. A tester mismatch is a P3 failure attributed to the spoil record for that serial.
+
+In simulated runs the harness plays the tester and supplies the comparison to the verifier as a map from ballot serial to the selected candidate index. A board verified without that map establishes check 1 to 4 only, and cannot detect a redirecting machine that opens truthfully. The paper states this.
+
 ## 12. Poll register
 
 Written at poll close by basket A, covered by the digest and the signatures.
@@ -693,7 +701,7 @@ The verifier outputs `Accept`, or `Reject` together with the property that faile
 
 **P2 ballot well-formedness.** Every ballot has exactly `m` ciphertexts in order, every group element is in `G`, every validity proof passes section 8.3, every sum-to-one proof passes section 9.3.
 
-**P3 cast-as-intended.** Every spoil record passes section 11. The set of spoil records equals the schedule recomputed from the revealed seed. Every spoiled ballot is excluded from the aggregate.
+**P3 cast-as-intended.** Every spoil record passes section 11, including the tester's comparison of section 11.1 where the tester's selections are supplied. The set of spoil records equals the schedule recomputed from the revealed seed. Every spoiled ballot is excluded from the aggregate.
 
 **P4 ballot-count integrity.** Serials run 1 to `ballots_issued` with no gap or repeat, register counts are internally consistent, the number of ballots entering the aggregate equals `ballots_counted`, and every published randomness commitment corresponds to an issued serial.
 
@@ -772,6 +780,12 @@ No preimage, field, field order or byte encoding changed. All domain separation 
 **5. Explicit non-identity check added, section 8.3 check 2.** The verifier rejects `alpha_i = 1`. Compromised firmware can set `r_i = 0` regardless of what section 7 says, so the property is enforced at the verifier rather than assumed of the prover. The check applies to ciphertext components only. Applying it to proof commitments would reintroduce the false rejection described in item 3.
 
 **6. Soundness note added, section 8.3.** Naming which of the checks carries soundness, because it is the one that can be dropped while every honest-path test continues to pass.
+
+### Revision 3 (proposed by basket D, pending group agreement)
+
+No preimage, field, field order or byte encoding changes.
+
+**1. Tester's comparison, section 11.1.** Section 11 said the tester compares the opened index with their selection but not where that comparison lives. It is made at the booth and never written to the board, since the machine writes the board. The verifier takes the tester's selections as an optional input; simulated runs supply them from the harness. Section 16 P3 updated to match.
 
 ### Outstanding
 

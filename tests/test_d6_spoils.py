@@ -8,14 +8,14 @@ and the schedule seed to SPEC, which isolates the D6 logic.
 """
 
 import dataclasses
-import hashlib
 import pathlib
 
 import pytest
 
 from verifier.compat import normalise_c_export
 from verifier.group import P
-from verifier.hashes import is_scheduled, randomness_commitment, schedule_commitment
+from tests.spec10 import rebuild, seed_for
+from verifier.hashes import schedule_commitment
 from verifier.parse import load_json, parse_board
 from verifier.result import CheckFailure
 from verifier.spoils import NOT_EXERCISED, PASSED, check_cast_as_intended
@@ -39,37 +39,9 @@ def a8_raw():
     return _board("A8-redirection")
 
 
-def _seed_for(schedule, issued, num, den):
-    for i in range(1_000_000):
-        seed = hashlib.sha256(i.to_bytes(8, "big")).digest()
-        if {s for s in range(1, issued + 1) if is_scheduled(seed, s, num, den)} == schedule:
-            return seed
-    raise AssertionError("no seed found")
-
-
-def _to_spec(board, seed=None, num=None, den=None):
-    """Rebuild the pre-poll commitments and schedule seed to SPEC 10."""
-    c = board.config
-    if num is not None:
-        c = dataclasses.replace(c, test_rate_num=num, test_rate_den=den)
-    spoiled = {sp.ballot_serial for sp in board.spoils}
-    if seed is None:
-        seed = _seed_for(spoiled, board.poll_register.ballots_issued,
-                         c.test_rate_num, c.test_rate_den)
-    by_serial = {sp.ballot_serial: sp for sp in board.spoils}
-    commits = tuple(
-        (s, randomness_commitment(board.base_hash, c.booth_id, s, by_serial[s].randomness,
-                                  by_serial[s].nonce) if s in by_serial else k)
-        for s, k in board.prepoll.randomness_commitments)
-    t = schedule_commitment(board.base_hash, c.booth_id, seed, c.test_rate_num, c.test_rate_den)
-    prepoll = dataclasses.replace(board.prepoll, randomness_commitments=commits,
-                                  test_schedule_commitment=t)
-    return dataclasses.replace(board, config=c, prepoll=prepoll, schedule_seed=seed)
-
-
 @pytest.fixture(scope="module")
 def spec_board(a8_raw):
-    return _to_spec(a8_raw)
+    return rebuild(a8_raw)
 
 
 @pytest.mark.xfail(strict=True, raises=CheckFailure, reason=BOARD_FORMULAS)
@@ -115,9 +87,9 @@ def test_skipped_scheduled_challenge_caught(spec_board):
 
 
 def test_spoil_for_unscheduled_serial_caught(a8_raw):
-    seed = _seed_for({6}, 20, 1, 20)
+    seed = seed_for({6}, 20, 1, 20)
     with pytest.raises(CheckFailure, match="did not draw"):
-        check_cast_as_intended(_to_spec(a8_raw, seed=seed))
+        check_cast_as_intended(rebuild(a8_raw, seed=seed))
 
 
 def test_spoiled_ballot_counted_in_aggregate_caught(spec_board):
@@ -142,13 +114,13 @@ def test_a8_redirection_caught_against_tester_record(spec_board):
 
 
 def test_c1_reports_not_exercised(spec_board):
-    board = _to_spec(dataclasses.replace(spec_board, spoils=()), seed=bytes(range(32)),
+    board = rebuild(dataclasses.replace(spec_board, spoils=()), seed=bytes(range(32)),
                      num=0, den=20)
     assert check_cast_as_intended(board) == NOT_EXERCISED
 
 
 def test_c1_with_a_spoil_record_fails(spec_board):
-    board = _to_spec(spec_board, seed=bytes(range(32)), num=0, den=20)
+    board = rebuild(spec_board, seed=bytes(range(32)), num=0, den=20)
     with pytest.raises(CheckFailure, match="test ballots disabled"):
         check_cast_as_intended(board)
 

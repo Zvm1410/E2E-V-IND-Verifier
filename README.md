@@ -37,7 +37,7 @@ in the end-to-end board runs (`tests/test_d7_attribution.py`).
 | D4 | Aggregate and decryption transcript (SPEC 13) | done; partial-proof preimages byte-exact against decryption.json; C10 rejected as P5 |
 | D5 | Digest, signatures, register cross-check (SPEC 12, 15) | done; C11 rejected as P1, A9 as P4 |
 | D6 | Spoil records and test schedule (SPEC 10, 11) | done against SPEC; C's boards fail (pre-poll commitments, see below) |
-| D7 | Property attribution P1 to P5 (SPEC 16) | done; C11 named P1, B12 named P2; clean, A8, A9, C10 blocked on SPEC 10 |
+| D7 | Property attribution P1 to P5 (SPEC 16) | done; all six attributions correct with commitments rebuilt to SPEC 10; on boards as exported, C11 and B12 correct, others blocked at P3 |
 | D8 to D11 | Harness, repeated elections, false rejection, tables | B10's C0 baseline vendored in vendor/b10 |
 
 ## Open findings against other baskets
@@ -56,8 +56,23 @@ in the end-to-end board runs (`tests/test_d7_attribution.py`).
    P5, so A9 and C10 are not attributed correctly until the boards are
    regenerated.
 3. **No C1 board.** "P3 not exercised" is tested on modified boards only.
-4. **Tester record (spec gap).** A machine that redirects and then opens
-   the challenged ballot truthfully is consistent on the board; only the
-   tester's own record of what they pressed catches it. SPEC 11 does not
-   say where that record lives. `verify(..., tester_selections=...)`
-   accepts it.
+4. **Tester record: resolved as option 1 (SPEC 11.1, proposed revision 3).**
+   The tester compares the opened index with their selection at the booth;
+   it is never on the board. Simulated runs pass the harness's selections
+   as `verify(..., tester_selections=...)`. Without them a truthful
+   redirection is not detectable from the board, and the paper says so.
+   Needs applying to the shared SPEC.md by whoever holds the pen.
+
+### Attribution once the pre-poll commitments follow SPEC 10
+
+`tests/test_d7_spec10_rebuilt.py` keeps every real record on C's boards and
+rebuilds only K_s, the schedule seed and T to SPEC 10:
+
+| Board | Expected | Verifier |
+|---|---|---|
+| clean | Accept | Accept, P1 to P5 passed |
+| A8 redirection | P3 | P3, tester selected 4, machine opened 5 |
+| A9 stuffing | P4 | P4, with P3 passed |
+| B12 malformed | P2 | P2 |
+| C10 tally manipulation | P5 | P5, with P1 to P4 passed |
+| C11 retroactive edit | P1 | P1 |
