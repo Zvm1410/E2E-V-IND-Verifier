@@ -24,8 +24,8 @@ pytest
 | D2 | Arithmetic, encoding, subgroup and range checks, strict parser | done against SPEC; C's clean board differs from SPEC 14 in four fields (see tests/test_d2_board.py); waits on ballot.json and negative.json vectors |
 | D3 | Validity proof verification (SPEC 8.3) | done; every proof on the clean, A8 and A9 boards verifies |
 | D3b | Sum-to-one verification (SPEC 9.3) | done |
-| D4 | Aggregate and decryption transcript (SPEC 13) | |
-| D5 | Digest, signatures, register cross-check (SPEC 12, 15) | |
+| D4 | Aggregate and decryption transcript (SPEC 13) | done; partial-proof preimages byte-exact against decryption.json; C10 rejected as P5 |
+| D5 | Digest, signatures, register cross-check (SPEC 12, 15) | done; C11 rejected as P1, A9 as P4 |
 | D6 | Spoil records and test schedule (SPEC 10, 11) | |
 | D7 | Property attribution P1 to P5 (SPEC 16) | |
-| D8 to D11 | Harness, repeated elections, false rejection, tables | |
+| D8 to D11 | Harness, repeated elections, false rejection, tables | B10's C0 baseline vendored in vendor/b10 |

@@ -64,3 +64,13 @@ def sumone_preimage(q_hash, booth_id, serial, pk, big_a, b_over_g, a, b):
     ])
     assert len(preimage) == 2408, len(preimage)
     return preimage
+
+
+def partial_preimage(q_hash, trustee_index, candidate_index, big_a, h_j, partial, a, b):
+    """SPEC 13.2. Exactly 2384 bytes."""
+    preimage = b"".join([
+        label("EVOTE-PARTIAL-v1"), q_hash, u64(trustee_index), u64(candidate_index),
+        i2b(G), i2b(big_a), i2b(h_j), i2b(partial), i2b(a), i2b(b),
+    ])
+    assert len(preimage) == 2384, len(preimage)
+    return preimage
