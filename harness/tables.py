@@ -1,15 +1,15 @@
-"""D11: result tables, rendered from whatever results exist.
+"""Result tables, rendered from whatever results exist.
 
 Every table is drawn even when its inputs are missing, with "—" in empty
-cells, so progress is visible and cut decisions are obvious (handbook D11).
+cells.
 
     python -m harness.tables            # writes results/tables.md
 
 Inputs, all under results/:
-    sweep.csv            harness.sweep (D9)
-    full_runs.json       harness.full_runs (D10 and the fast-model check)
-    attribution.json     harness.full_runs --attribution (D7 on regenerated boards)
-    bench_*.json         harness.bench (A11), newest file used
+    sweep.csv            harness.sweep
+    full_runs.json       harness.full_runs --clean/--redirect
+    attribution.json     harness.full_runs --attribution
+    bench_*.json         harness.bench, newest file used
 """
 
 from __future__ import annotations
@@ -27,9 +27,10 @@ for extra in (ROOT / "baseline",):
 
 DASH = "—"
 HEADLINE_P = "1/20"
-ATTACKS = [("Vote redirection", "A8", "P3"), ("Ballot stuffing", "A9", "P4"),
-           ("Malformed ballot injection", "B12", "P2"), ("Tally manipulation", "C10", "P5"),
-           ("Retroactive board edit", "C11", "P1")]
+ATTACKS = [("Vote redirection", "redirection", "P3"), ("Ballot stuffing", "stuffing", "P4"),
+           ("Malformed ballot injection", "malformed", "P2"),
+           ("Tally manipulation", "tally-manipulation", "P5"),
+           ("Retroactive board edit", "board-edit", "P1")]
 
 
 def _load_sweep(results):
@@ -87,7 +88,7 @@ def by_rate(rows, k_values, p_values):
 
 
 def cluster_vs_srs():
-    """B10 at assembly-segment scale: 250 booths of 800, five audited."""
+    """C0 at assembly-segment scale: 250 booths of 800, five audited."""
     try:
         from baseline_c0 import (allocate_manipulation, c0_cluster, c0_srs,
                                  same_rate_sample_size)
@@ -107,10 +108,11 @@ def cluster_vs_srs():
 def attribution(results):
     path = results / "attribution.json"
     data = json.loads(path.read_text()) if path.exists() else {}
-    body = [[name, hook, expected, data.get(hook, DASH)] for name, hook, expected in ATTACKS]
-    body.append(["(clean run)", "-", "Accept", data.get("clean", DASH)])
-    body.append(["(configuration C1)", "-", "Accept, P3 not exercised", data.get("C1", DASH)])
-    return _table(["Attack", "Hook", "Expected", "Verifier"], body)
+    body = [[name, expected, data.get(key, DASH)] for name, key, expected in ATTACKS]
+    body.append(["(clean election)", "Accept", data.get("clean", DASH)])
+    body.append(["(configuration C1)", "Accept, P3 not exercised",
+                 data.get("c1-no-test-ballots", DASH)])
+    return _table(["Scenario", "Expected", "Verifier"], body)
 
 
 def full_runs(results):
@@ -166,15 +168,15 @@ def render(results):
         "", fingerprinting(rows, k_values), "",
         "## Table 3. C2 with a blind adversary, by test rate",
         "", by_rate(rows, k_values, p_values), "",
-        "## Table 4. Paper-audit baseline at segment scale (B10)",
+        "## Table 4. Paper-audit baseline at segment scale",
         "", cluster_vs_srs(), "",
-        "## Table 5. Attack attribution on full-crypto boards (D7)",
+        "## Table 5. Attack attribution on full-crypto boards",
         "", attribution(results), "",
-        "## Table 6. Full-crypto runs (D10 and fast-model check)",
+        "## Table 6. Full-crypto runs: false rejection and the fast-model check",
         "", full_runs(results), "",
-        "## Table 7. Per-ballot cost on the target hardware (A11)",
+        "## Table 7. Per-ballot cost on the target hardware",
         "", bench(results), "",
-        "## Sanity checks (D9)",
+        "## Sanity checks",
         "",
         f"- A0 under C2 reproduces 1-(1-p)^k across {sanity.get('blind_cells', DASH)} cells "
         f"(Bonferroni family-wise 95%): {sanity.get('blind_matches_analytic', DASH)}",

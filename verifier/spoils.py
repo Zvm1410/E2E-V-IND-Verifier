@@ -1,4 +1,4 @@
-"""D6: spoil records and the test schedule (SPEC 10, 11, 16 P3).
+"""Spoil records and the test schedule (SPEC 10, 11, 16 P3).
 
 Returns "passed" or "not_exercised"; raises CheckFailure("P3", ...) on
 failure. "not_exercised" is configuration C1 (test_rate.num == 0): the

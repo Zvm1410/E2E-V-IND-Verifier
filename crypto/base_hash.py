@@ -9,7 +9,7 @@ identifier, the candidate list, the trustee set and the signing authorities.
 
 Q appears as the second field of every challenge preimage in the system
 (sections 8.2, 9.2, 10.1, 10.2, 13.2). A single wrong byte here does not fail
-loudly: every proof still verifies against itself, and only fails when basket D
+loudly: every proof still verifies against itself, and only fails when the independent verifier
 recomputes it. That is why the preimage length is asserted rather than trusted,
 and why build_base_hash_preimage() is exposed separately from compute_base_hash().
 

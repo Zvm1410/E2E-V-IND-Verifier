@@ -290,7 +290,7 @@ def parse_prepoll(obj, path="prepoll"):
         if isinstance(e, dict) and "nonce_commitment" in e:
             raise ParseError(ep + ".nonce_commitment",
                              "pre-poll entry publishes a nonce; it must stay secret until "
-                             "the serial is spoiled (SPEC 10.1, handbook C9)")
+                             "the serial is spoiled (SPEC 10.1)")
         _obj(e, ep, ["ballot_serial", "commitment"])
         commits.append((_small_int(e["ballot_serial"], ep + ".ballot_serial"),
                         hash32(e["commitment"], ep + ".commitment")))
@@ -334,7 +334,7 @@ def _sum_proof(obj, path):
 
 
 def parse_ballot(obj, m, path="ballot"):
-    """B3c / SPEC 14 ballot record with exactly m ciphertexts and proofs in order."""
+    """SPEC 14 ballot record with exactly m ciphertexts and proofs in order."""
     _obj(obj, path, ["record_type", "booth_id", "ballot_serial", "ciphertexts",
                      "validity_proofs", "sum_proof"])
     _record_type(obj["record_type"], path, "ballot")

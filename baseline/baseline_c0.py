@@ -1,7 +1,7 @@
 """
 C0 -- paper-audit baseline simulator.
 
-Two regimes, both required by B10, both reported.
+Two regimes, both reported.
 
     C0_cluster   Whole booths are the sampling unit. `c` booths out of `B`
                  are chosen at random and their slips are fully hand
@@ -376,7 +376,7 @@ def monte_carlo_srs(N: int, k: int, s: int, trials: int, seed: int, d=1) -> floa
     """Simulate the SRS audit directly. Returns an empirical detection rate.
 
     Shares no arithmetic with c0_srs: this draws a sample and looks at it.
-    Agreement between the two is what the B10 sanity check requires.
+    Agreement between the two is the module's central sanity check.
     """
     _check_units(N, k, s)
     _int(trials, "trials")

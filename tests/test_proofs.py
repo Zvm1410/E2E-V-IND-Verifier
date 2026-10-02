@@ -1,6 +1,6 @@
-"""D3 and D3b: validity and sum-to-one proofs (SPEC 8.3, 9.3).
+"""Validity and sum-to-one proofs (SPEC 8.3, 9.3).
 
-Run against the real ballots on C's clean board, which carry B's proofs.
+Run against the real ballots on the revision 2 clean board.
 Kept to ballot 1 for the mutation tests; each check costs a few 3072-bit
 exponentiations.
 """
@@ -13,7 +13,7 @@ import pytest
 
 from verifier.encoding import inv
 from verifier.group import G, P, Q
-from tests.legacy import parse_legacy
+from tests.boards_v2 import parse_v2
 from verifier.parse import load_json, parse_board
 from verifier.proofs import (
     ProofFailure,
@@ -22,13 +22,13 @@ from verifier.proofs import (
     verify_validity_proof,
 )
 
-BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
+BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards-v2"
 
 
 @pytest.fixture(scope="module")
 def board():
     raw = load_json((BOARDS / "clean" / "board.json").read_bytes())
-    return parse_legacy(raw)
+    return parse_v2(raw)
 
 
 def _check(board, ballot, i, proof=None, serial=None, booth=None, index=None, ct=None):

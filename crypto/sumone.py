@@ -1,23 +1,23 @@
-"""B7b. Sum-to-one proof.
+"""Sum-to-one proof.
 
-SPEC.md v1 revision 2, section 9. Basket B.
+SPEC section 9.
 
 WHAT THIS CLOSES (the one sentence for the viva):
-    The m per-candidate validity proofs of B7 establish that every entry of
+    The m per-candidate validity proofs establish that every entry of
     the ballot vector is 0 or 1. They say nothing about how many entries are
     1, so a ballot of all ones passes all m of them and casts m votes. This
     proof binds the componentwise product of the ballot's own ciphertexts to
     an encryption of exactly 1. Without it the ballot is unconstrained in
     weight and the tally is meaningless.
 
-    B7b alone proves sum == 1 (mod q). The range 0 <= sum <= m comes from
-    B7. Neither is sufficient without the other; that is why both exist.
+    The sum-to-one proof alone proves sum == 1 (mod q). The range 0 <= sum <= m comes from
+    the validity proofs. Neither is sufficient without the other; that is why both exist.
 
 SCOPE. This is ONE proof per ballot, not one per candidate. "Applied per
-candidate" belongs to B7. There is exactly one sum_proof object in the B3c
+candidate" belongs to the validity proofs. There is exactly one sum_proof object in the SPEC 14
 ballot record shape.
 
-DEPENDENCIES. B2 (group), B3 (encoding), B3b (membership). Not B7.
+DEPENDENCIES. group, encoding, membership. Not validity_proof.
 """
 
 from __future__ import annotations
@@ -27,13 +27,12 @@ from dataclasses import dataclass
 from typing import Iterable, Optional, Sequence, Tuple
 
 # --------------------------------------------------------------------------
-# ADAPT THIS BLOCK to the module names in your BasketB folder.
-# Do not re-implement these here. Two encoders in one project is the exact
-# failure mode SPEC section 3 and handbook section 2.3 exist to prevent.
+# Shared primitives, imported rather than re-implemented: two encoders in one
+# project is the failure mode SPEC section 3 exists to prevent.
 # --------------------------------------------------------------------------
-from group import P as p, Q as q, G as g        # B2, SPEC section 2
-from encoding import I2B, B2I, U64, S32, L      # B3, SPEC section 3
-from membership import in_group                 # B3b, SPEC section 2.1
+from group import P as p, Q as q, G as g        # group, SPEC section 2
+from encoding import I2B, B2I, U64, S32, L      # encoding, SPEC section 3
+from membership import in_group                 # subgroup membership, SPEC section 2.1
 
 
 SUMONE_LABEL = "EVOTE-SUMONE-v1"
@@ -81,7 +80,7 @@ class SumProof:
     b: int
 
     def to_json(self) -> dict:
-        """The sum_proof object of the B3c ballot record shape."""
+        """The sum_proof object of the SPEC 14 ballot record shape."""
         return {
             "c": I2B(self.c).hex(),
             "f": I2B(self.f).hex(),
@@ -120,7 +119,7 @@ class SumProof:
 
 @dataclass(frozen=True)
 class VerifyResult:
-    """Verification outcome plus the reason, for D7 property attribution.
+    """Verification outcome plus the reason, for the verifier's property attribution.
 
     A sum-to-one failure attributes to P2, ballot well-formedness.
     """
@@ -134,10 +133,10 @@ class VerifyResult:
 
 
 def _as_pairs(ciphertexts: Iterable) -> Sequence[Tuple[int, int]]:
-    """Accept either B3c record dicts or plain (alpha, beta) tuples.
+    """Accept either SPEC 14 record dicts or plain (alpha, beta) tuples.
 
     Order is the caller's responsibility: it is the configuration order and
-    B3c requires candidate_index ascending with no gaps. Where dicts carry
+    SPEC 14 requires candidate_index ascending with no gaps. Where dicts carry
     candidate_index, the order is asserted here rather than trusted, because
     A and C both build this list independently.
     """
@@ -183,11 +182,11 @@ def sumone_preimage(*, Q: bytes, booth_id: str, ballot_serial: int, pk: int,
                     A: int, B_over_g: int, a: int, b: int) -> bytes:
     """The exact 2408 bytes of SPEC section 9.2, in order.
 
-    Q is the 32 raw bytes of the base hash from B4b, not the group order q.
+    Q is the 32 raw bytes of the base hash, not the group order q.
     They are one letter apart and the type check below is deliberate.
     """
     if not isinstance(Q, (bytes, bytearray)) or len(Q) != 32:
-        raise TypeError("Q must be the 32 raw bytes of the base hash (B4b), not an int")
+        raise TypeError("Q must be the 32 raw bytes of the base hash, not an int")
     fields = (
         ("label", L(SUMONE_LABEL)),
         ("Q", bytes(Q)),
@@ -227,13 +226,13 @@ def prove_sum_to_one(*, Q: bytes, booth_id: str, ballot_serial: int, pk: int,
                      check_consistency: bool = True) -> SumProof:
     """Chaum-Pedersen proof that the ballot's ciphertext product encrypts 1.
 
-    rng is a seeded random.Random, per handbook section 1.5. In a real
+    rng is a seeded random.Random (reproducibility). In a real
     deployment w comes from `secrets`; the seeded path exists so that run
     4,417 of 10,000 can be reproduced exactly.
 
     check_consistency=True catches the caller bug where r_vector does not
     match the ciphertexts it was supposedly used to build, which otherwise
-    surfaces three layers away as an unverifiable board. B12's malformed
+    surfaces three layers away as an unverifiable board. The malformed-ballot hook's malformed
     ballot injection passes False on purpose.
     """
     pairs = _as_pairs(ciphertexts)
@@ -253,7 +252,7 @@ def prove_sum_to_one(*, Q: bytes, booth_id: str, ballot_serial: int, pk: int,
             raise SumToOneError(
                 "B*g^-1 != pk^R: this ballot does not encrypt exactly one 1. "
                 "Pass check_consistency=False if you are deliberately building "
-                "a malformed ballot for B12."
+                "a malformed ballot for the malformed-ballot hook."
             )
 
     w = rng.randrange(q)                      # uniform in [0, q), SPEC 9.1

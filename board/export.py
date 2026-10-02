@@ -1,7 +1,7 @@
 """
 export.py
 
-Basket C - Export Verification
+Export verification
 
 Verifies that the exported board and signature
 files do not contain secret information before
@@ -84,7 +84,7 @@ def scan_for_secrets(data):
 
 def scan_for_secret_values(board_filename, secret_hex_values):
     """
-    Handbook C9: search the exported file's text for secret values that
+    Search the exported file's text for secret values that
     may sit under innocent keys: trustee shares, and the nonce of every
     ballot that was never spoiled. Values are lowercase hex; a share is
     also searched at its 768-character fixed width.

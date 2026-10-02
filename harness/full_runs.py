@@ -3,16 +3,16 @@
 Runs the real prover in this repository (crypto/, tally/, run_election.py).
 Three jobs:
 
-  D10    --clean N: N clean elections, each from a different setup seed.
+  clean     --clean N: N clean elections, each from a different setup seed.
          The verifier must accept every one; a single rejection stops
-         everything (handbook D10).
+         everything.
   check  --redirect N: N elections in which a blind adversary redirects k
          uniformly chosen serials. For each, the fast model's prediction
          (some redirected serial is a scheduled test ballot) is compared
          with the verifier's verdict on the real board. They must agree
          every time; that agreement is what licenses harness.sim for the
-         D9 sweep.
-  D7     --attribution DIR: verify the seven regenerated bundles unpacked
+         sweep.
+  attribution --attribution DIR: verify the seven bundles
          (bundle-<tag>/) under DIR and record each verdict.
 
     python -m harness.full_runs --clean 30 --redirect 30 --ballots 40
@@ -42,9 +42,8 @@ from verifier.parse import load_json, parse_board  # noqa: E402
 from verifier.spoils import recompute_schedule  # noqa: E402
 from verifier.verify import verify  # noqa: E402
 
-BUNDLES = {"clean": "clean", "A8": "A8-redirection", "A9": "A9-stuffing",
-           "B12": "B12-malformed", "C10": "C10-tally-tamper",
-           "C11": "C11-retroactive-edit", "C1": "C1-no-test-ballots"}
+BUNDLES = ["clean", "redirection", "stuffing", "malformed", "tally-manipulation",
+           "board-edit", "c1-no-test-ballots"]
 
 
 def _verify_dir(d):
@@ -136,7 +135,7 @@ def full_runs(repo, clean, redirect, ballots, k, base_seed, procs, save=None):
 
 def attribution(root):
     out = {}
-    for key, tag in BUNDLES.items():
+    for tag in BUNDLES:
         candidates = [Path(root) / f"bundle-{tag}", Path(root) / tag]
         d = next((c for c in candidates if (c / "board.json").exists()), None)
         if d is None:
@@ -144,11 +143,11 @@ def attribution(root):
             continue
         r = _verify_dir(d)
         if r.accepted:
-            out[key] = "Accept" + (", P3 not exercised" if r.properties["P3"] == "not_exercised"
+            out[tag] = "Accept" + (", P3 not exercised" if r.properties["P3"] == "not_exercised"
                                    else "")
         else:
-            out[key] = r.failed_property
-        print(f"{tag}: {out[key]}" + (f"  ({r.failure.reason})" if r.failure else ""))
+            out[tag] = r.failed_property
+        print(f"{tag}: {out[tag]}" + (f"  ({r.failure.reason})" if r.failure else ""))
     return out
 
 

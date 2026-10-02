@@ -1,22 +1,22 @@
 {
-    "digest": "b301caec48d357884b5da8abea5e88bec160363bcf5e2d09d5498de4daf07f92",
-    "officer_signature": "5e04a897cccc4f5f5db8434af85c50c5a04c036aa83dddfdeb13c18e2067d9547e6818ab327eb9ae34aa3564137fe4d1ba80386c196364fe2b0e05b512b4e804",
+    "digest": "98c527ed2ac093f3ff4051326c6acbe382b2747797482f1f18dc2d269e0f5b40",
+    "officer_signature": "46b19bd34312e3399ab3807026edd09da6654bb86cc4eb054ed551034b2c0e0b93b1297f18645738c249e9f34c02e7d6ed5cafe66ec5149a4ac9cfcb2cc4da0a",
     "agent_signatures": [
         {
             "agent_index": 0,
-            "signature": "3041a98e1e8ede4f4912410842438e6fc64002e875b293236dddacad8148c5c8aa6699c3486a041e8e002830efba541bb45c480168d5acfbc41f2447381b8507"
+            "signature": "a2b4dd802169a623db0808c3563b439cf5158b05b953c948f600e6d27cdf5e5ecd201d4d8f85a63f044c2b8f3cc3cfbd0e76137937d24bc66d1e9cbe521f030c"
         },
         {
             "agent_index": 1,
-            "signature": "ac05b369f49ba761ee8cd2fe270c3ec53f4d7ac6eeacfd0f28beda3eb6862bdfdd63fe1193c20ea2e86c77acbacf5e439c15d59126b3b2614a1d40708ee37a01"
+            "signature": "e017ee680c8c4e2189f155d930ee92679f426a1612da3fe730fef6e6a193900f797321baeaa01df516b6e985e5dfb31140f13305b8e2ec6c331d928a33599607"
         },
         {
             "agent_index": 2,
-            "signature": "4f141f777e1d5836fc2b8e4fde6c21dbc548848227d6d60fc6195aa4ba1cf072945de1ff7ec59c9c592c19593d1bdcc1587dc7e359891c9ef409b6d48296bb0f"
+            "signature": "4102795ffd87be3677739c3feaa8528b8c8083eab23c77693ca24a1b09046e53f5257c092f6a4fd7c939338f8bd237c4a34f6756eb86c495d2324b0f21c9cc06"
         },
         {
             "agent_index": 3,
-            "signature": "78a302192a8e9df00324ae334110ea88e7a77eba4e49464c07f1338e8dfbb8a86a0269ae19bad2ae49b40550c8ca75f02eff9a311d48ff310724cabf6b45e606"
+            "signature": "4773ac897709e07ee7b75168528abd591cc0843ae6750fd2517476d2484dd1def5db77d51d30ecdbe5ac88ef6d122d5a885d23f5a007198d134521d6e7566804"
         }
     ]
 }

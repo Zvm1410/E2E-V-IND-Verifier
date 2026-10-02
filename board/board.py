@@ -1,7 +1,7 @@
 """
 board.py
 
-Basket C - Bulletin Board Serialization
+Bulletin board serialisation
 SPEC.md Section 14
 """
 

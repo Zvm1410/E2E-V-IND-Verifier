@@ -1,4 +1,4 @@
-"""B4 - Exponential ElGamal over RFC 3526 group 15.
+"""Exponential ElGamal over RFC 3526 group 15.
 
 Normative source: SPEC.md v1 revision 2, sections 2, 2.1, 3.1, 7, 8.3, 13.1, 13.3.
 Cryptographic source: ElGamal (IEEE TIT 1985); exponential / additively
@@ -27,7 +27,7 @@ Two spec rules that are easy to lose and are enforced here rather than assumed:
     log item 3). The identity is a legitimate group element. Rejection of
     alpha = 1 is a separate, explicitly named check, not folded into in_group.
 
-INTERFACE CONTRACT with the rest of basket B. This module imports exactly
+INTERFACE CONTRACT with the rest of crypto/. This module imports exactly
 four names and nothing else:
 
     from .group import p, q, g, in_group
@@ -294,7 +294,7 @@ def decrypt(ct: Ciphertext, sk: int, bound: int) -> int:
 
 
 def check_ciphertext(ct: Ciphertext) -> None:
-    """Section 8.3 checks 1 and 2, restricted to the parts B4 owns.
+    """Section 8.3 checks 1 and 2, restricted to the parts this module owns.
 
     Check 1: in_group on both components.
     Check 2: alpha != 1. Applies to ciphertext components only and never to
@@ -302,8 +302,8 @@ def check_ciphertext(ct: Ciphertext) -> None:
     rejecting it would create nonzero clean-mode false rejection, which
     section 16 forbids.
 
-    Raises ElGamalError naming the failed check. Basket D's verifier owns the
-    full ordered check list; this exists so that basket B never publishes a
+    Raises ElGamalError naming the failed check. The verifier owns the
+    full ordered check list; this exists so that the prover never publishes a
     ciphertext that its own verifier would refuse.
     """
     if not in_group(ct.alpha):

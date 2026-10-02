@@ -1,4 +1,4 @@
-"""D2: encodings, SPEC section 3, and the base-hash preimage of 5.2."""
+"""Encodings, SPEC section 3, and the base-hash preimage of 5.2."""
 
 import pytest
 

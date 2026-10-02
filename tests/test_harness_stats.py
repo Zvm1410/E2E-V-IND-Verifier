@@ -3,8 +3,8 @@ import pytest
 from harness.stats import wilson
 
 
-def test_handbook_worked_example():
-    """B11: 8 successes in 10 trials gives roughly 0.49 to 0.94."""
+def test_worked_example():
+    """8 successes in 10 trials gives roughly 0.49 to 0.94."""
     lo, hi = wilson(8, 10)
     assert round(lo, 2) == 0.49 and round(hi, 2) == 0.94
 

@@ -1,17 +1,16 @@
-"""D2: the whole-board parser against C's exported boards (SPEC 14, rev 3).
-
-The fixtures predate the removal of `nonce_commitment`; see tests/legacy.py."""
+"""The whole-board parser (SPEC 14), on the revision 2 boards; see
+tests/boards_v2.py."""
 
 import pathlib
 
 import pytest
 
 from verifier.hashes import base_hash
-from tests.legacy import strip_nonces
+from tests.boards_v2 import strip_nonces
 from verifier.parse import ParseError, load_json, parse_board
 
-BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
-NAMES = ["clean", "A8-redirection", "A9-stuffing", "C10-tally-tamper", "C11-retroactive-edit"]
+BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards-v2"
+NAMES = ["clean", "redirection", "stuffing", "tally-manipulation", "board-edit"]
 
 
 def _load(name):
@@ -31,9 +30,9 @@ def test_exported_boards_rejected_for_publishing_nonces(name):
         parse_board(_load(name))
 
 
-def test_b12_board_rejected_at_the_malformed_ballot():
+def test_malformed_board_rejected_at_the_malformed_ballot():
     with pytest.raises(ParseError) as exc:
-        parse_board(strip_nonces(_load("B12-malformed")))
+        parse_board(strip_nonces(_load("malformed")))
     assert exc.value.path.startswith("ballots[10]")
 
 

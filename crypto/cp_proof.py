@@ -1,5 +1,5 @@
 """
-B6 -- Chaum-Pedersen equality-of-discrete-logarithms proof (DLEQ).
+Chaum-Pedersen equality-of-discrete-logarithms proof (DLEQ).
 
 Protocol
 --------
@@ -19,7 +19,7 @@ Prover (witness x in Z_q), SPEC section 13.2:
     f  = (w + c*x) mod q
 
 Verifier accepts iff
-    g1, h1, u, v, a, b in the order-q subgroup   [B3b]
+    g1, h1, u, v, a, b in the order-q subgroup   [subgroup membership]
     0 <= c, f < q
     c recomputes from the preimage
     g1^f == a * u^c mod p
@@ -35,7 +35,7 @@ specific ones, with different labels and different field lists:
 
 So this module does not own a domain tag and cannot invent one. The core
 `prove` / `verify` pair takes the preimage from the caller; the section 13.2
-instance is built here because basket C's C4 is its consumer and the layout is
+instance is built here because the decryption proofs are its consumer and the layout is
 normative.
 
 Section 9.2's instance lives in `sumone.py`, which already builds it correctly.
@@ -46,7 +46,7 @@ Revision note. An earlier version of this module derived its challenge through
 `challenge.py`, which used a one-byte domain tag and keyed SHA-256 with Q
 instead of placing Q inside the preimage. That is not the construction in
 SPEC.md and no proof produced under it verifies against a spec-conformant
-verifier. Basket D implements from the document, so the document wins.
+verifier. The verifier is implemented from the document, so the document wins.
 """
 
 from __future__ import annotations
@@ -100,7 +100,7 @@ class CPProof:
 
     Field names are SPEC section 13.4's: c, f, a, b. The response is `f`, not
     `s`, because that is what the decryption transcript publishes and what
-    basket D's parser is built against.
+    the verifier's parser is built against.
     """
 
     c: int
@@ -152,11 +152,11 @@ def partial_preimage(*, Q: bytes, trustee_index: int, candidate_index: int,
                      A_i: int, h_j: int, M_ji: int, a: int, b: int) -> bytes:
     """The exact 2384 bytes of SPEC section 13.2, in order.
 
-    Q is the 32 raw bytes of the base hash from B4b, not the group order q.
+    Q is the 32 raw bytes of the base hash, not the group order q.
     They are one letter apart and the type check below is deliberate.
     """
     if not isinstance(Q, (bytes, bytearray)) or len(Q) != 32:
-        raise TypeError("Q must be the 32 raw bytes of the base hash (B4b), not an int")
+        raise TypeError("Q must be the 32 raw bytes of the base hash, not an int")
     fields = (
         ("label", L(PARTIAL_LABEL)),
         ("Q", bytes(Q)),
@@ -196,7 +196,7 @@ def prove_partial_decryption(*, Q: bytes, trustee_index: int, candidate_index: i
 
     Bases (g, A_i), targets (h_j, M_ji), witness s_j. Returns (M_ji, proof).
 
-    rng is a seeded random.Random, per handbook section 1.5. In a real
+    rng is a seeded random.Random (reproducibility). In a real
     deployment w comes from `secrets`; the seeded path exists so that run 4,417
     of 10,000 can be reproduced exactly.
     """

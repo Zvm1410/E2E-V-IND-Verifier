@@ -1,4 +1,4 @@
-"""D9: repeated-election runner over the evaluation grid.
+"""Repeated-election runner over the evaluation grid.
 
 Runs harness.sim.simulate across configurations, adversaries, tester
 regimes, A3 leakage fractions, test rates p and manipulation counts k,
@@ -8,7 +8,7 @@ aggregates detection rates and attaches Wilson 95% intervals.
     python -m harness.sweep --runs 200 --quick    # smoke run
 
 Writes results/sweep.csv and results/sweep.json (grid, model constants,
-and the two D9 sanity checks).
+and the two sanity checks).
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ def run_cell(args):
     if config == "C2" and adversary == "A0":
         row["analytic"] = 1 - (1 - float(p)) ** k
     elif config == "C0":
-        from baseline_c0 import c0_srs  # basket B, baseline/
+        from baseline_c0 import c0_srs  # baseline/
         row["analytic"] = float(c0_srs(ballots, k, ballots * p.numerator // p.denominator))
     elif config == "C1":
         row["analytic"] = 0.0
@@ -72,7 +72,7 @@ def run_cell(args):
 
 
 def sanity(rows):
-    """The two D9 checks, evaluated on the finished sweep.
+    """The two sanity checks, evaluated on the finished sweep.
 
     Check 1 compares every blind-adversary cell with 1-(1-p)^k. With many
     cells, some 95% intervals miss by chance (about 1 in 20), so the pass
@@ -96,7 +96,7 @@ def sanity(rows):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="D9 repeated-election sweep.")
+    ap = argparse.ArgumentParser(description="Repeated-election sweep.")
     ap.add_argument("--runs", type=int, default=2000)
     ap.add_argument("--ballots", type=int, default=BALLOTS)
     ap.add_argument("--quick", action="store_true", help="p = 1/20 and k in {1, 5, 20} only")
@@ -129,10 +129,10 @@ def main(argv=None):
     }
     (out / "sweep.json").write_text(json.dumps(meta, indent=2) + "\n")
     print(f"{len(rows)} cells x {args.runs} runs in {elapsed:.0f} s -> {out / 'sweep.csv'}")
-    print(f"D9 check 1, A0 reproduces 1-(1-p)^k across {checks['blind_cells']} cells "
+    print(f"Check 1, A0 reproduces 1-(1-p)^k across {checks['blind_cells']} cells "
           f"(family-wise 95%): {checks['blind_matches_analytic']}; outside the per-cell "
           f"95% interval: {checks['blind_outside_95_interval'] or 'none'}")
-    print(f"D9 check 2, AOracle max detection rate: {checks['oracle_max_rate']}")
+    print(f"Check 2, AOracle max detection rate: {checks['oracle_max_rate']}")
 
 
 if __name__ == "__main__":

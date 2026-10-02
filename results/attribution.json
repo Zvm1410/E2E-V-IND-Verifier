@@ -1,9 +1,9 @@
 {
   "clean": "Accept",
-  "A8": "P3",
-  "A9": "P4",
-  "B12": "P2",
-  "C10": "P5",
-  "C11": "P1",
-  "C1": "Accept, P3 not exercised"
+  "redirection": "P3",
+  "stuffing": "P4",
+  "malformed": "P2",
+  "tally-manipulation": "P5",
+  "board-edit": "P1",
+  "c1-no-test-ballots": "Accept, P3 not exercised"
 }

@@ -1,7 +1,7 @@
-"""End-to-end attribution on boards regenerated with pipeline/make_bundles.sh.
-
-Copy the seven bundle-<tag>/ directories into tests/fixtures/boards-r3/<tag>/. Each test is skipped until its board is
-there. Expected outcomes are handbook D7 / SPEC 16, plus C1 (handbook C12).
+"""End-to-end property attribution on the boards in tests/fixtures/boards,
+produced by make_bundles.sh: a clean run, one run per attack, and
+configuration C1. Expected outcomes are SPEC 16; under C1 the election is
+accepted with P3 not exercised.
 """
 
 import json
@@ -11,23 +11,25 @@ import pytest
 
 import verifier.verify as v
 
-ROOT = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards-r3"
+pytestmark = pytest.mark.slow
+
+ROOT = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
 
 EXPECTED = {
     "clean": None,
-    "A8-redirection": "P3",
-    "A9-stuffing": "P4",
-    "B12-malformed": "P2",
-    "C10-tally-tamper": "P5",
-    "C11-retroactive-edit": "P1",
-    "C1-no-test-ballots": None,
+    "redirection": "P3",
+    "stuffing": "P4",
+    "malformed": "P2",
+    "tally-manipulation": "P5",
+    "board-edit": "P1",
+    "c1-no-test-ballots": None,
 }
 
 
 def _verify(tag):
     d = ROOT / tag
     if not (d / "board.json").exists():
-        pytest.skip(f"{d} not present; run pipeline/make_bundles.sh")
+        pytest.skip(f"{d} not present; run make_bundles.sh")
     tester_file = d / "tester_selections.json"
     tester = ({int(k): int(x) for k, x in json.loads(tester_file.read_text()).items()}
               if tester_file.exists() else None)
@@ -45,7 +47,7 @@ def test_attribution(tag, expected):
 
 
 def test_c1_reports_p3_not_exercised():
-    r = _verify("C1-no-test-ballots")
+    r = _verify("c1-no-test-ballots")
     assert r.properties["P3"] == "not_exercised", r.summary()
 
 

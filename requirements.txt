@@ -1,3 +1,4 @@
 cryptography
 pytest
+pytest-xdist  # optional: pytest -n 4
 PyQt6  # the kiosk GUI (app/) only; the verifier, harness and run_election.py do not need it

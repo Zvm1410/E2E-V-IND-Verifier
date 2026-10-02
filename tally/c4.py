@@ -1,10 +1,10 @@
 """
 c4.py
 
-Basket C - Decryption Correctness Proofs
+Decryption Correctness Proofs
 SPEC Section 13.2
 
-Uses Basket B's B6 Chaum-Pedersen implementation.
+Uses the Chaum-Pedersen implementation in crypto/cp_proof.py.
 """
 
 from crypto.cp_proof import (
@@ -23,7 +23,7 @@ def create_partial_decryption_proof(
     rng,
 ):
     """
-    C4: Create a Chaum-Pedersen proof that the
+    Create a Chaum-Pedersen proof that the
     partial decryption was computed using the
     trustee's committed share.
 
@@ -54,7 +54,7 @@ def verify_partial_decryption_proof(
     proof,
 ):
     """
-    C4: Verify a trustee's partial decryption proof.
+    Verify a trustee's partial decryption proof.
     """
 
     return verify_partial_decryption(
@@ -160,4 +160,4 @@ def verify_partial_decryption_proof(
 
     assert bool(result) is False
 
-    print("\nAll C4 sanity checks passed.")'''
+    print("\nAll decryption-proof sanity checks passed.")'''

@@ -1,10 +1,11 @@
-"""D6: spoil records and the test schedule (SPEC 10, 11).
+"""Spoil records and the test schedule (SPEC 10, 11).
 
-C's boards commit to the schedule and the randomness with formulas that
-differ from SPEC 10.1 and 10.2, so they fail here (strict xfail below).
-The other tests take the real spoil records from the A8 board (real
-randomness, real ciphertexts) and rebuild only the pre-poll commitments
-and the schedule seed to SPEC, which isolates the D6 logic.
+The revision 2 boards commit to the schedule and the randomness with
+formulas that differ from SPEC 10.1 and 10.2, so they fail here (strict
+xfail below). The other tests take the real spoil records from the
+revision 2 redirection board (real randomness, real ciphertexts) and
+rebuild only the pre-poll commitments and the schedule seed to SPEC, which
+isolates the spoil checks.
 """
 
 import dataclasses
@@ -15,38 +16,38 @@ import pytest
 from verifier.group import P
 from tests.spec10 import rebuild, seed_for
 from verifier.hashes import schedule_commitment
-from tests.legacy import parse_legacy
+from tests.boards_v2 import parse_v2
 from verifier.parse import load_json, parse_board
 from verifier.result import CheckFailure
 from verifier.spoils import NOT_EXERCISED, PASSED, check_cast_as_intended
 from verifier.tally import aggregate
 
-BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
+BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards-v2"
 
 BOARD_FORMULAS = """
-C's boards: test_schedule_commitment = SHA-256(schedule_seed), not SPEC 10.2's T;
+Revision 2 boards: test_schedule_commitment = SHA-256(schedule_seed), not SPEC 10.2's T;
 K_s = SHA-256(U64(s) || S32(booth_id) || I2B(r_0..r_m-1) || nonce), SPEC 10.1 without
 the label and Q; and spoils at serials 6, 7 where SPEC 10.2's schedule is empty.
 """
 
 
 def _board(name):
-    return parse_legacy(load_json((BOARDS / name / "board.json").read_bytes()))
+    return parse_v2(load_json((BOARDS / name / "board.json").read_bytes()))
 
 
 @pytest.fixture(scope="module")
-def a8_raw():
-    return _board("A8-redirection")
+def redirection_raw():
+    return _board("redirection")
 
 
 @pytest.fixture(scope="module")
-def spec_board(a8_raw):
-    return rebuild(a8_raw)
+def spec_board(redirection_raw):
+    return rebuild(redirection_raw)
 
 
 @pytest.mark.xfail(strict=True, raises=CheckFailure, reason=BOARD_FORMULAS)
-def test_a8_board_as_exported_meets_spec_10(a8_raw):
-    check_cast_as_intended(a8_raw)
+def test_v2_redirection_board_meets_spec_10(redirection_raw):
+    check_cast_as_intended(redirection_raw)
 
 
 def test_spec_conformant_spoils_pass(spec_board):
@@ -86,10 +87,10 @@ def test_skipped_scheduled_challenge_caught(spec_board):
         check_cast_as_intended(board)
 
 
-def test_spoil_for_unscheduled_serial_caught(a8_raw):
+def test_spoil_for_unscheduled_serial_caught(redirection_raw):
     seed = seed_for({6}, 20, 1, 20)
     with pytest.raises(CheckFailure, match="did not draw"):
-        check_cast_as_intended(rebuild(a8_raw, seed=seed))
+        check_cast_as_intended(rebuild(redirection_raw, seed=seed))
 
 
 def test_spoiled_ballot_counted_in_aggregate_caught(spec_board):
@@ -103,8 +104,8 @@ def test_wrong_schedule_seed_caught(spec_board):
         check_cast_as_intended(dataclasses.replace(spec_board, schedule_seed=bytes(32)))
 
 
-def test_a8_redirection_caught_against_tester_record(spec_board):
-    """A8's machine opened candidate 5 on both challenged ballots. A tester
+def test_redirection_caught_against_tester_record(spec_board):
+    """The redirecting machine opened candidate 5 on both challenged ballots. A tester
     who pressed anything else catches it; the board alone cannot."""
     pressed = {sp.ballot_serial: 2 for sp in spec_board.spoils}
     with pytest.raises(CheckFailure, match="tester selected 2"):

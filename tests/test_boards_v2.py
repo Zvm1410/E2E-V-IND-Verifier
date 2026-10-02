@@ -1,10 +1,8 @@
-"""D7 on the revision 2 boards exactly as exported.
+"""The revision 2 boards, verified exactly as they are.
 
-Every one of them publishes each serial's secret nonce in the pre-poll
-section, so each is rejected under P1, C11 first at the digest. The
-attribution table proper is tested on these boards with the pre-poll
-section corrected (tests/test_d7_spec10_rebuilt.py) and on regenerated
-boards when present (tests/test_e2e_regenerated.py).
+Every one publishes each serial's secret nonce in the pre-poll section, so
+each is rejected under P1 (the board-edit board first, at the digest). The
+attribution table is tested on the current boards (tests/test_end_to_end.py).
 """
 
 import pathlib
@@ -12,11 +10,11 @@ import pathlib
 import pytest
 
 import verifier.verify as v
-from tests.legacy import strip_nonces
+from tests.boards_v2 import strip_nonces
 from verifier.spoils import NOT_EXERCISED
 
-BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
-NONCE_LEAK = ["clean", "A8-redirection", "A9-stuffing", "B12-malformed", "C10-tally-tamper"]
+BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards-v2"
+NONCE_LEAK = ["clean", "redirection", "stuffing", "malformed", "tally-manipulation"]
 
 
 def _files(name):
@@ -32,8 +30,8 @@ def test_exported_board_rejected_p1_for_published_nonces(name):
     assert all(r.properties[p] == "not_checked" for p in ("P2", "P3", "P4", "P5"))
 
 
-def test_c11_retroactive_edit_rejected_at_the_digest_first():
-    r = v.verify(*_files("C11-retroactive-edit"))
+def test_retroactive_edit_rejected_at_the_digest_first():
+    r = v.verify(*_files("board-edit"))
     assert r.failed_property == "P1" and "digest" in r.failure.reason
 
 

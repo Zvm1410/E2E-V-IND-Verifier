@@ -1,4 +1,4 @@
-"""The testing authority's T and schedule (built on B's crypto.encoding)
+"""The testing authority's T and schedule (built on crypto.encoding)
 must equal what the verifier recomputes from the revealed seed with its own
 independent code. Skipped until crypto/ is present."""
 

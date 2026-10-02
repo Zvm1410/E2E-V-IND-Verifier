@@ -63,7 +63,7 @@ def main() -> int:
     parser.add_argument("--tester",  default="out/tester_selections.json")
     parser.add_argument("--out-dir", default="bundle")
     parser.add_argument("--tar",     default="bundle.tar.gz",
-                        help="Also write a tar.gz of the bundle for handover.")
+                        help="Also write a tar.gz of the bundle.")
     args = parser.parse_args()
 
     board_p = Path(args.board).resolve()
@@ -87,7 +87,7 @@ def main() -> int:
     findings = scan_for_secrets(board_data)
     if findings:
         print("[bundle] REFUSED: secrets scan found forbidden fields on the")
-        print("[bundle]           board. Handover would leak private data.")
+        print("[bundle]           board. Exporting it would leak private data.")
         for f in findings:
             print(f"[bundle]           - {f}")
         return 2

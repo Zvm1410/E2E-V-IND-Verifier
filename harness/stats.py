@@ -1,4 +1,4 @@
-"""Confidence intervals for detection rates (the role of handbook B11)."""
+"""Confidence intervals for detection rates."""
 
 from math import sqrt
 

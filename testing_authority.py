@@ -43,12 +43,14 @@ def derive_schedule(seed: bytes, ballots_expected: int, num: int, den: int) -> s
 
 
 def seed_from_int(value: int) -> bytes:
-    """Reproducible seed for simulated runs (handbook 1.5: a seeded override
-    of the cryptographic source, for tests only)."""
+    """Reproducible seed for simulated runs: a seeded override of the
+    cryptographic source, for tests and evaluation only."""
     return hashlib.sha256(b"EVOTE-AUTHORITY-SEED" + value.to_bytes(16, "big")).digest()
 
 
 class TestingAuthority:
+    __test__ = False  # not a pytest test class, despite the name
+
     def __init__(self, Q: bytes, booth_id: str, num: int, den: int,
                  ballots_expected: int, seed: Optional[bytes] = None):
         # Production: 32 bytes from the OS. Simulated runs pass seed_from_int(...).

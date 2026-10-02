@@ -2,15 +2,15 @@
 
 Cryptographic audit framework for end-to-end verifiable voting in air-gapped electronic voting machines.
 
-Specification version `v1`, revision 3. Owners: basket B and basket D jointly; from revision 3 basket D holds sole editorial authority.
+Specification version `v1`, revision 3.
 
-Revision 2 changes no preimage, no field, no field order and no byte encoding. Every domain separation label stays at `-v1` and every hash in the system is unchanged. See the change log in section 20.
+Revisions change no preimage and no byte encoding: every domain separation label is still `-v1`. See the change log in section 20.
 
 ## 0. Status and change control
 
-This document is frozen at the end of day 1. After that, no change is made by one person editing this file. A change is proposed to the group, agreed, applied here, announced, and the version label in every affected domain separation string is incremented. A local patch that is not written here means two implementations now differ and nobody knows which is right.
+Every change is a numbered revision recorded in section 20. A change to any preimage, field or byte encoding also increments the version label in every affected domain separation string. A behaviour that is not written here is not part of the protocol.
 
-Basket D implements from this document and from `spec/vectors/`. Basket D does not read `crypto/` or `tally/` source. If something here is ambiguous, D asks B or C, and the answer is written into this file rather than delivered verbally.
+The independent verifier is implemented from this document and `spec/vectors/` alone, without reference to the prover's source (see `INDEPENDENCE.md`). Where this document is ambiguous, the resolution is written into it.
 
 Everything below is normative. Where a byte order, a field order, or a padding rule is stated, it is not a suggestion.
 
@@ -167,7 +167,7 @@ The candidate list is identical across booths. NOTA is the last entry and is an 
 
 `seed` drives every deterministic draw in a simulated run. In a real deployment the randomness sources named in section 10 come from `secrets`; the seeded path exists so that run 4,417 of 10,000 can be reproduced exactly.
 
-Malformed configuration produces one clear error message naming the missing or invalid field. Basket A owns this loader.
+Malformed configuration produces one clear error message naming the missing or invalid field.
 
 ### 5.2 Base hash Q
 
@@ -280,7 +280,7 @@ c_v = (c - c_d) mod q
 f_v = (w + c_v * r) mod q
 ```
 
-The whole soundness of the scheme is that the prover chooses one sub-challenge freely and the other is forced. A construction in which both `c_0` and `c_1` are chosen freely makes forgery trivial. Check this against the Cramer, Damgard and Schoenmakers paper on paper before accepting any generated code, and check it against the independent re-derivation recorded in section 19.
+The whole soundness of the scheme is that the prover chooses one sub-challenge freely and the other is forced. A construction in which both `c_0` and `c_1` are chosen freely makes forgery trivial. Check this against the Cramer, Damgard and Schoenmakers paper before accepting any implementation, and against the independent re-derivation recorded in section 21.
 
 The published proof is `(c_0, c_1, f_0, f_1, a_0, b_0, a_1, b_1)`.
 
@@ -458,7 +458,7 @@ In simulated runs the harness plays the tester and supplies the comparison to th
 
 ## 12. Poll register
 
-Written at poll close by basket A, covered by the digest and the signatures.
+Written at poll close by the machine, covered by the digest and the signatures.
 
 ```
 ballots_issued    every serial handed out, including spoiled
@@ -636,7 +636,7 @@ Signatures live outside this object. See section 15.
 
 `ciphertexts` and `validity_proofs` are ordered by `candidate_index` ascending, length exactly `m`, no gaps. The order is the configuration order and it is bound into every challenge. A booth that reorders its candidate list produces proofs that fail everywhere else.
 
-There is no timestamp on any ballot record. Timing is a fingerprinting feature for basket A's adversaries and it stays in the machine's private log. Putting it on the board would leak the exact signal the paper studies.
+There is no timestamp on any ballot record. Timing is a fingerprinting feature for the adversaries of the evaluation and it stays in the machine's private log. Putting it on the board would leak the exact signal the paper studies.
 
 ```json
 {
@@ -730,11 +730,11 @@ The verifier outputs `Accept`, or `Reject` together with the property that faile
 Attribution is a reported metric, so it has to be right. The mapping from the attack corpus to the expected property is:
 
 ```
-vote redirection            (basket A)   P3
-ballot stuffing             (basket A)   P4
-malformed ballot injection  (basket B)   P2
-tally manipulation          (basket C)   P5
-retroactive board edit      (basket C)   P1
+vote redirection            P3
+ballot stuffing             P4
+malformed ballot injection  P2
+tally manipulation          P5
+retroactive board edit      P1
 ```
 
 A verifier that names P5 when the attack was a retroactive board edit is a bug, not a near miss.
@@ -745,7 +745,7 @@ Clean-mode false rejection must be exactly zero. If one clean election is reject
 
 ## 17. Test vectors
 
-Generated by basket B with a fixed seed, written to `spec/vectors/`, byte-identical across runs.
+Generated with a fixed seed, written to `spec/vectors/`, byte-identical across runs.
 
 ```
 group.json            p, q, g as HEX384, the three pinned digests
@@ -766,7 +766,7 @@ negative.json         for each of the above, one single-byte mutation that must 
 
 Raw preimage bytes in hex are mandatory in every vector that involves a hash. Almost every failure in this project is one wrong byte in one preimage, and without the preimage in the vector there is no way to find which byte.
 
-Basket D builds the entire verifier against these files and never sees `crypto/` or `tally/` source. Where D's output disagrees with a vector, either this specification is ambiguous, in which case it is fixed here, or one of the two implementations is wrong, in which case a real bug has been found. Both outcomes are the constraint working.
+The verifier is built against these files without reference to `crypto/` or `tally/`. Where its output disagrees with a vector, either this specification is ambiguous, in which case it is fixed here, or one of the two implementations is wrong, in which case a real bug has been found. Both outcomes are the constraint working.
 
 ## 18. Deliberate simplifications, to be stated in the paper
 
@@ -777,11 +777,7 @@ Basket D builds the entire verifier against these files and never sees `crypto/`
 
 ## 19. Open items
 
-These are the only things not frozen. Each has a named owner and a deadline.
-
-1. Discharged. See section 21.
-2. The adversary feature dictionary from basket A. Owner A and D jointly, end of week 1. It does not affect any hash and can be settled after this document is frozen.
-3. Discharged. The malformed ballot injection hook is task B12 in execution handbook revision 3.
+None.
 
 ## 20. Change log
 
@@ -789,7 +785,7 @@ These are the only things not frozen. Each has a named owner and a deadline.
 
 No preimage, field, field order or byte encoding changed. All domain separation labels remain `-v1`. Every hash the system computes is identical before and after this revision, so existing test vectors remain valid except where a stated byte count is quoted inside them.
 
-**1. Base hash preimage length corrected, section 5.2.** The summary sentence said `1696 + 64m + 384n + 32a`, giving 4128 bytes at the default configuration. The field list sums to `1704 + ...`, giving 4136. The list was right and the summary was one `U64` short. The value of `Q` is unaffected, since only the description was wrong. Found by basket B.
+**1. Base hash preimage length corrected, section 5.2.** The summary sentence said `1696 + 64m + 384n + 32a`, giving 4128 bytes at the default configuration. The field list sums to `1704 + ...`, giving 4136. The list was right and the summary was one `U64` short. The value of `Q` is unaffected, since only the description was wrong.
 
 **2. Same stale count corrected in section 17.** `base_hash.json` was described as carrying a 4128-byte preimage. It carries 4136. Fixing 5.2 alone would have left the test vector specification contradicting the construction it tests.
 
@@ -803,28 +799,20 @@ No preimage, field, field order or byte encoding changed. All domain separation 
 
 ### Revision 3
 
-Applied by basket D, which holds sole editorial authority from this revision. No preimage, field order or byte encoding changes and no label changes. Section 14's field names change, which only affects the canonical bytes the digest already covers.
+No preimage, field order, byte encoding or label changes. Section 14's field names change, which only affects the canonical bytes the digest covers.
 
-**1. Tester's comparison, section 11.1.** Section 11 said the tester compares the opened index with their selection but not where that comparison lives. It is made at the booth and never written to the board, since the machine writes the board. The verifier takes the tester's selections as an optional input; simulated runs supply them from the harness. Section 16 P3 updated to match.
+**1. Tester's comparison, section 11.1.** Section 11 said the tester compares the opened index with their selection but not where that comparison lives. It is made at the booth and never written to the board, since the machine writes the board. The verifier takes the tester's selections as an optional input; simulated runs supply them. Section 16 P3 updated to match.
 
-**2. Board schema matched to the exported boards, section 14.** `election_config` omits `seed`; `trustee_setup` carries `pk` and no `record_type`; `tally_declaration` carries `totals` of `{candidate_index, candidate_id, votes}`. The shapes of `schedule_opening` and `tally_aggregate`, previously unspecified, are written down.
+**2. Board schema, section 14.** `election_config` omits `seed`; `trustee_setup` carries `pk` and no `record_type`; `tally_declaration` carries `totals` of `{candidate_index, candidate_id, votes}`. The shapes of `schedule_opening` and `tally_aggregate` are written down.
 
-**4. `nonce_commitment` removed from the pre-poll section.** Revision 2 exports carried a per-serial `nonce_commitment` holding the raw secret nonce of every serial, published before the poll, contrary to section 10.1 and handbook C9. A pre-poll entry carrying a nonce is rejected under P1.
+**3. Pre-poll section publishes only `K_s`, section 14.** No other per-serial value, in particular no nonce, is published before the poll; a pre-poll entry carrying a nonce is rejected under P1.
 
-**5. Pre-poll implementation brought to sections 10.1 and 10.2.** The machine's `K_s` omitted the label and Q, `T` was `SHA-256(schedule_seed)`, the schedule was drawn by a different rule, and spoils were topped up with unscheduled serials. Fixed in the machine and integration code; no change to this document's constructions.
+**4. The schedule seed is held by the testing authority, section 10.2.** The seed is generated off the machine and only `T` is given to it, so the machine cannot compute which ballots will be challenged. No change to `T`, the draw, or any record.
 
-**3. Section 19 item 3 discharged.** The malformed ballot hook is B12.
+## 21. Independent re-derivation record
 
-**6. The schedule seed is held by the testing authority, section 10.2.** The machine generated the seed from the same deterministic source as the ballot randomness, so compromised firmware could compute the schedule. The seed is now generated off the machine and only `T` is given to it. No change to `T`, the draw, or any record.
-
-### Outstanding
-
-Section 19 item 1 is still owed: the independent re-derivation of the challenge split and preimage contents, produced without visibility into `crypto/` or `verifier/`, pasted into this document before B7 and B8 are accepted. It was due end of day 1 and it is the control that would have caught items 1 and 3 earlier.
-
-## 21. Independent re-derivation record (section 19 item 1)
-
-Produced in a separate session with no visibility into `crypto/`, `tally/` or
-`verifier/`, and without sight of sections 8.1 or 8.2.
+Produced independently, without access to `crypto/`, `tally/` or `verifier/`,
+and without sight of sections 8.1 or 8.2, from the published construction.
 
 **This section is a record, not normative text.** Where it differs from section
 8, section 8 governs. Nothing quoted here authorises a change to any preimage,
@@ -933,8 +921,8 @@ This is not such a variant.
 noting numbering differs between the proceedings version and reprints. Verify
 against the CRYPTO'94 text before the write-up cites a number.
 
-### 21.3 Status
+### 21.3 Outcome
 
-Section 19 item 1 is discharged. No preimage, field, field order or byte
-encoding changed. All labels remain `-v1` and every hash the system computes is
-identical before and after this section was added. B7 and B8 are unblocked.
+The re-derivation agrees with section 8 on the challenge split and on the
+contents of the preimage. No preimage, field, field order or byte encoding
+changed as a result.

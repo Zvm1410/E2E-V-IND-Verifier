@@ -4,6 +4,6 @@ __pycache__/
 .pytest_cache/
 out/
 out-*/
-for-basket-d*/
-for-basket-d*.tar.gz
 .DS_Store
+bundle-*/
+bundle-*.tar.gz

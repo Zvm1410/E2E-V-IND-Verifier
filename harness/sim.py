@@ -1,4 +1,4 @@
-"""D8: one simulated election, fast model.
+"""One simulated election, fast model.
 
 Given a configuration (C0, C1 or C2), an adversary (A0 to A3, or AOracle),
 a manipulation count k, a test rate p and a seed, run one election and
@@ -7,9 +7,9 @@ report whether the vote redirection was detected and under which property.
 What is modelled, and what is not
 ---------------------------------
 The schedule is SPEC 10.2's per-serial draw, computed by the verifier's own
-`is_scheduled` from a seed. The adversaries are basket A's classes, imported
+`is_scheduled` from a seed. The adversaries are the machine's adversary classes, imported
 unmodified from app/services/adversary.py. The machine sees, for each ballot, the features
-of A's dictionary (elapsed time since poll open, ballot index, time from
+of the feature dictionary (elapsed time since poll open, ballot index, time from
 selection to confirmation, input device) before it encrypts, decides by its
 adversary's rule which ballots are safe to manipulate, and redirects k of
 them chosen uniformly among those it judges not to be tests.
@@ -48,7 +48,7 @@ for extra in (ROOT, ROOT / "baseline"):
     if str(extra) not in sys.path:
         sys.path.insert(0, str(extra))
 
-from app.services.adversary import (  # noqa: E402  (basket A, unmodified)
+from app.services.adversary import (  # noqa: E402
     A0Blind, A1Temporal, A2Interaction, A3Leakage, AdversaryFeatures, AOracle,
 )
 from verifier.hashes import is_scheduled  # noqa: E402

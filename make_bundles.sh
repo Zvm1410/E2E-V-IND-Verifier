@@ -22,11 +22,11 @@ run() {
 
 STD=config/election.json
 run clean                 "$STD"
-run A8-redirection        "$STD" --redirect-to 5
-run A9-stuffing           "$STD" --stuff 3 --force-sign
-run B12-malformed         "$STD" --malform
-run C10-tally-tamper      "$STD" --tamper-tally
-run C11-retroactive-edit  "$STD" --retroactive-edit
-run C1-no-test-ballots    config/election_c1.json
+run redirection           "$STD" --redirect-to 5
+run stuffing              "$STD" --stuff 3 --force-sign
+run malformed             "$STD" --malform
+run tally-manipulation    "$STD" --tamper-tally
+run board-edit            "$STD" --retroactive-edit
+run c1-no-test-ballots    config/election_c1.json
 
 echo "Done: seven bundle-*/ directories and bundle-*.tar.gz files."

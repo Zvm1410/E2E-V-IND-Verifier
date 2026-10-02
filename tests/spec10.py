@@ -1,10 +1,10 @@
 """Rebuild a parsed board's pre-poll commitments and schedule seed to SPEC 10.
 
-C's boards commit with formulas that differ from SPEC 10.1 and 10.2 (see
-README, open finding 2). This keeps every real ballot, spoil, signature and
-transcript and replaces only K_s for the spoiled serials, the schedule
-seed, and T, so the checks after P3 can be exercised before the boards are
-regenerated. Test use only; never imported by verifier/.
+The revision 2 boards commit with formulas that differ from SPEC 10.1 and
+10.2. This keeps every real ballot, spoil, signature and transcript and
+replaces only K_s for the spoiled serials, the schedule seed and T, so the
+checks can be exercised on a board whose schedule the test chooses. Test
+use only; never imported by verifier/.
 """
 
 import dataclasses

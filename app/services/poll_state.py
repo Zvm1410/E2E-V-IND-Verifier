@@ -1,4 +1,4 @@
-"""Poll register and ballot lifecycle state (A6)."""
+"""Poll register and ballot lifecycle state."""
 
 from __future__ import annotations
 

@@ -1,12 +1,12 @@
 """
-B8b. encrypt_and_prove -- the assembly.
+encrypt_and_prove -- the assembly.
 
-Basket B. This file owns no mathematics. It wires B4 (elgamal), B7
-(validity_proof), B7b (sumone) and B8's binding into the single function basket
+This file owns no mathematics. It wires exponential ElGamal (elgamal), the validity proof
+(validity_proof), sum-to-one proof (sumone) and strong Fiat-Shamir binding into the single function the machine
 A calls, and returns the three structures record.build_ballot_record consumes.
 
 It does not draw encryption randomness. The vector is drawn and committed before
-the poll opens (A7b, SPEC section 10.1) and passed in. If this function ever
+the poll opens (SPEC section 10.1) and passed in. If this function ever
 draws r itself the pre-poll commitment is decorative and the attack it exists to
 catch walks straight through, so there is an explicit assertion below that
 elgamal.encrypt_selection used the vector it was handed.
@@ -57,7 +57,7 @@ def _validate_inputs(candidate_index, r_vector, Q, booth_id, ballot_serial, pk, 
 
     # SPEC section 7 and change log item 4. r_i is drawn from [1, q), never
     # [0, q). At r_i = 0 the ciphertext is (1, g^{v_i}) and the vote is readable
-    # off the board by anyone with no key. A7b draws it; this is the second gate.
+    # off the board by anyone with no key. The pre-poll stage draws it; this is the second gate.
     for i, r in enumerate(r_vector):
         if not isinstance(r, int) or isinstance(r, bool):
             raise TypeError(f"r_vector[{i}] must be an int, got {type(r).__name__}")
@@ -100,8 +100,8 @@ def encrypt_and_prove(
 ) -> Tuple[List[Ciphertext], List[ValidityProof], SumProof]:
     """Encrypt a vote for `candidate_index` and prove it well formed.
 
-    The positional signature is the one agreed with basket A in A5 and fixed in
-    handbook revision 3. `self_check` is keyword-only and defaults off, so A's
+    The positional signature is the one used by the machine's cast path and fixed in
+    SPEC revision 3. `self_check` is keyword-only and defaults off, so the machine's
     call site is unaffected by its existence.
 
     Returns (ciphertexts, validity_proofs, sum_proof). The first two have length
@@ -110,22 +110,22 @@ def encrypt_and_prove(
 
     `self_check` re-verifies everything before returning, at roughly another 52
     exponentiations. It is a post-condition, not a test: a prover and a verifier
-    wrong in the same way both pass it. See handbook section 2.5.
+    wrong in the same way both pass it.
     """
     _validate_inputs(candidate_index, r_vector, Q, booth_id, ballot_serial, pk, m)
     r_list = list(r_vector)
 
-    # --- B4. Encryption. Draws nothing; randomness is supplied. -----------
+    # --- Encryption. Draws nothing; randomness is supplied. -----------
     raw_cts, used_r = encrypt_selection(pk, m, candidate_index, randomness=r_list)
 
-    # A7b is the reason this assertion exists. If encrypt_selection ever
+    # The pre-poll commitment (SPEC 10.1) is the reason this assertion exists. If encrypt_selection ever
     # substitutes its own randomness, the pre-poll commitment stops opening
-    # against the cast ballot and D6 fails at every challenged ballot for a
+    # against the cast ballot and spoil verification fails at every challenged ballot for a
     # reason nobody will be able to find from the verifier's output.
     if list(used_r) != r_list:
         raise AssertionError(
             "encrypt_selection did not use the supplied randomness vector; the "
-            "pre-poll commitment of A7b would not open against this ballot"
+            "pre-poll commitment (SPEC 10.1) would not open against this ballot"
         )
     if len(raw_cts) != m:
         raise AssertionError(f"encrypt_selection returned {len(raw_cts)} ciphertexts, expected {m}")
@@ -138,7 +138,7 @@ def encrypt_and_prove(
             raise AssertionError(f"alpha is the identity at candidate index {i}")
         ciphertexts.append(Ciphertext(candidate_index=i, alpha=ct.alpha, beta=ct.beta))
 
-    # --- B7 + B8. One two-branch OR-proof per position. -------------------
+    # --- Validity proofs with strong Fiat-Shamir binding. One two-branch OR-proof per position. -------------------
     # Ascending candidate index. The index is bound into each challenge
     # (SPEC 8.2), so this ordering is load-bearing, not cosmetic.
     validity_proofs: List[ValidityProof] = []
@@ -158,8 +158,8 @@ def encrypt_and_prove(
             )
         )
 
-    # --- B7b. One sum-to-one proof over the whole vector. -----------------
-    # sumone._as_pairs accepts B3c record dicts or plain (alpha, beta) tuples,
+    # --- One sum-to-one proof over the whole vector. -----------------
+    # sumone._as_pairs accepts SPEC 14 record dicts or plain (alpha, beta) tuples,
     # not record.Ciphertext instances. The dict form is used rather than tuples
     # because it carries candidate_index, so _as_pairs asserts the ordering
     # instead of trusting it.

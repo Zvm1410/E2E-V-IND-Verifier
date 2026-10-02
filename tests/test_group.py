@@ -1,4 +1,4 @@
-"""D2: group parameters, SPEC section 2, against spec/vectors/group.json."""
+"""Group parameters, SPEC section 2, against spec/vectors/group.json."""
 
 from tests.vectors import load
 from verifier.encoding import hex384_to_int

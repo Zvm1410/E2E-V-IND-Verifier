@@ -1,14 +1,10 @@
 """
-B3b. Subgroup membership.
-
-Implements SPEC.md v1 revision 2, section 2.1, only. The group
-parameters (p, q, g), their load-time assertions and the pinned digest
-checks are B2's deliverable and are imported, never redefined here.
-
->>> CHANGE THIS IMPORT to point at B2's module. <<<
+Subgroup membership, SPEC section 2.1. The group parameters (p, q, g), their
+load-time assertions and the pinned digest checks live in group.py and are
+imported, never redefined here.
 """
 
-from group import P as p, Q as q  # B2. Group parameters
+from group import P as p, Q as q  # group parameters
 
 def in_group(x: int) -> bool:
     """

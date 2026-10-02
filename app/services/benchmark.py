@@ -1,6 +1,6 @@
-"""Admin-panel benchmark (A11), real measurements only.
+"""Admin-panel benchmark: real measurements only.
 
-Times the machine's own cast path through the real basket B pipeline:
+Times the machine's own cast path through the real cryptographic pipeline:
 `encrypt_and_prove` (encryption and all proofs together, as the ballot
 service measures it), building the board record, and the whole cast.
 Memory is the process's peak resident set from the OS.

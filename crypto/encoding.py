@@ -1,5 +1,5 @@
 """
-SPEC.md section 3 -- encoding primitives (task B3).
+SPEC.md section 3 -- encoding primitives.
 
 Implements, exactly as specified, nothing more:
     I2B / B2I  -- section 3.1, fixed-width big-endian integer <-> bytes

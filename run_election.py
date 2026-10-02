@@ -1,37 +1,31 @@
 """End-to-end election runner.
 
-This is the ``run_election.py`` promised by the handbook (Basket C,
-task C1) and referenced by the project scope as the single integration
-entry point. Replaces the placeholder in the original Basket C ZIP
-(which was a script of ``print`` statements) with the real pipeline.
+Runs one election through the whole system without the kiosk UI. It does no
+cryptography itself: every step calls ``crypto/``, ``tally/``, ``board/`` and
+the machine's ``app/services``. It also plays the testing authority
+(``testing_authority.py``).
 
-The runner does no cryptography itself. Every step calls into the
-already-tested implementations in ``crypto/`` (Basket B), ``tally/``
-and ``board/`` (Basket C), and drives the machine flow of ``app/``
-(Basket A) without the PyQt UI.
-
-Pipeline (matches the project-scope flow):
-
-    1. load config                                     (Basket A)
-    2. initialise election  = new BallotService(...)   (A + B + C)
+    1. load config                                     (app.services.election_loader)
+    2. initialise election  = BallotService(...)
          - trusted dealer for sk/pk + shares           (tally.trustees)
          - Ed25519 officer + agent keys                (board.authority)
          - base hash Q                                  (crypto.base_hash)
-         - pre-poll r vectors + commitments            (this module & B)
+         - pre-poll r vectors + commitments K_s        (SPEC 10.1)
+       testing authority: schedule seed, commitment T  (SPEC 10.2)
     3. publish pre-poll section                        (board.append_prepoll)
     4. open poll                                       (PollState.open_poll)
-    5. cast N ballots, run scheduled spoils            (A -> B -> C)
+    5. cast N ballots; challenge the scheduled serials
     6. reveal schedule seed, write poll register       (board)
-    7. aggregate valid ballots per candidate           (tally.threshold)
+    7. aggregate unspoiled ballots per candidate       (tally.threshold)
     8. threshold-decrypt each candidate column         (tally.threshold)
-    9. baby-step giant-step recover per-candidate tally (crypto.elgamal)
-   10. append tally aggregate + decryption transcript + tally declaration
+    9. baby-step giant-step recovery of each count     (crypto.elgamal)
+   10. append tally aggregate, decryption transcript, tally declaration
    11. compute board digest, multisign, export         (board.digest / signature / export)
 
-The runner accepts optional CLI arguments so a smoke test can run
-quickly; ``--config`` points at a scenario JSON, ``--ballots`` overrides
-the cast count, ``--out-dir`` selects the output directory. With no
-arguments it uses ``config/election.json`` and casts 20 ballots.
+``--config`` selects the configuration, ``--ballots`` the number cast,
+``--out-dir`` the output directory, ``--authority-seed`` a reproducible
+schedule; the remaining flags switch on the attack hooks. With no arguments
+it uses ``config/election.json`` and casts 20 ballots.
 """
 
 from __future__ import annotations
@@ -46,8 +40,8 @@ from pathlib import Path
 from typing import Dict, List
 
 # --- Bootstrapping the import graph ------------------------------------
-# ``crypto/__init__.py`` puts its own directory on sys.path so Basket B
-# files can keep their absolute imports (``from group import ...``). We
+# ``crypto/__init__.py`` puts its own directory on sys.path so the modules
+# inside it can keep their absolute imports (``from group import ...``). We
 # import ``crypto`` first purely for that side effect.
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
@@ -66,9 +60,9 @@ def main() -> int:
                         help="Vary ballot selections without changing the "
                              "election setup seed (tests only).")
     parser.add_argument("--stuff", type=int, default=0,
-                        help="If >0, enable A9 ballot-stuffing hook with N ballots.")
+                        help="Ballot stuffing: append N ballots no voter cast.")
     parser.add_argument("--redirect-to", type=int, default=None,
-                        help="If set, enable A8 vote-redirection to this index.")
+                        help="Vote redirection: encrypt this candidate index instead of the voter's choice.")
     parser.add_argument("--authority-seed", type=int, default=None,
                         help="Reproducible testing-authority seed (simulation only); "
                              "default draws 32 bytes from the OS.")
@@ -80,13 +74,13 @@ def main() -> int:
     parser.add_argument("--verify-tally", type=str, default=None,
                         help="JSON dict {candidate_index: expected} to assert.")
     parser.add_argument("--force-sign", action="store_true",
-                        help="Sign even if tally does not match register (for A9 demos).")
+                        help="Sign even if the tally does not match the register (stuffing runs).")
     parser.add_argument("--malform", action="store_true",
-                        help="B12: inject one malformed ballot (forged validity proof).")
+                        help="Malformed ballot injection: add one ballot with a forged validity proof.")
     parser.add_argument("--tamper-tally", action="store_true",
-                        help="C10: publish a tally_declaration that does not match the aggregate.")
+                        help="Tally manipulation: declare a tally that does not match the aggregate.")
     parser.add_argument("--retroactive-edit", action="store_true",
-                        help="C11: mutate a ballot record after signing.")
+                        help="Retroactive board edit: change a ballot record after signing.")
     args = parser.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -131,14 +125,14 @@ def main() -> int:
     if args.redirect_to is not None:
         service.attack_config.vote_redirection_enabled = True
         service.attack_config.redirect_to_index = int(args.redirect_to)
-        print(f"    ATTACK A8       : vote redirection ON -> index {args.redirect_to}")
+        print(f"    ATTACK          : vote redirection ON -> index {args.redirect_to}")
     if args.stuff > 0:
         service.attack_config.ballot_stuffing_enabled = True
         service.attack_config.stuffed_count = int(args.stuff)
-        print(f"    ATTACK A9       : ballot stuffing ON  -> {args.stuff} extra")
+        print(f"    ATTACK          : ballot stuffing ON  -> {args.stuff} extra")
 
     # -------- 3. Publish pre-poll section ----------------------------
-    print("[3] Publishing pre-poll commitments (A7b + A10.2 schedule commit)")
+    print("[3] Publishing pre-poll commitments (K_s per serial, schedule commitment T)")
     service.publish_pre_poll_commitments()
 
     # -------- 4. Open poll -------------------------------------------
@@ -162,9 +156,9 @@ def main() -> int:
     tester_selections: Dict[int, int] = {}
 
     intended_tally: Counter[int] = Counter()
-        # ---- B12 malformed ballot injection --------------------------
+        # ---- Malformed ballot injection -----------------------------
     if args.malform:
-        print("    ATTACK B12    : injecting malformed ballot before cast loop")
+        print("    ATTACK        : injecting a malformed ballot before the cast loop")
         import random as _random
         from crypto.encrypt_and_prove import encrypt_and_prove as _eap
         from crypto.record import build_ballot_record
@@ -205,7 +199,7 @@ def main() -> int:
         poll_state.confirm_selection()
 
         if redirect_serials:
-            # Targeted A8: only the listed serials, each to a different candidate.
+            # Targeted redirection: only the listed serials, each to a different candidate.
             service.attack_config.vote_redirection_enabled = serial in redirect_serials
             service.attack_config.redirect_to_index = (chosen + 1) % cfg.candidate_count
 
@@ -219,7 +213,7 @@ def main() -> int:
         else:
             service.append_ballot(artifacts)
             # ``artifacts.candidate_index`` is what was ACTUALLY encrypted
-            # (may differ from ``chosen`` under A8), which is what the
+            # (may differ from ``chosen`` under redirection), which is what the
             # decryption will recover.
             intended_tally[artifacts.candidate_index] += 1
         poll_state.finish_ballot()
@@ -342,9 +336,9 @@ def main() -> int:
         ],
     }
 
-        # ---- C10 tally manipulation ---------------------------------
+        # ---- Tally manipulation -------------------------------------
     if args.tamper_tally:
-        print("    ATTACK C10    : mutating tally_declaration (adding 100 to CAND-A)")
+        print("    ATTACK        : tally declaration altered (adding 100 to CAND-A)")
         service.board["tally_declaration"]["totals"][0]["votes"] += 100
         args.force_sign = True
 
@@ -394,15 +388,15 @@ def main() -> int:
     ]
     sigfile = create_signature_file(digest_hex, officer_sig, agent_sigs)
     write_signature_file(sigfile, str(sig_out))
-        # ---- C11 retroactive board edit -----------------------------
+        # ---- Retroactive board edit ---------------------------------
     if args.retroactive_edit:
-        print("    ATTACK C11    : mutating a ballot record after signing")
+        print("    ATTACK        : a ballot record changed after signing")
         if service.board["ballots"]:
             b0 = service.board["ballots"][0]
             a = b0["ciphertexts"][0]["alpha"]
             b0["ciphertexts"][0]["alpha"] = ("f" if a[0] != "f" else "0") + a[1:]
             bb.write_board(service.board, str(board_out))
-    # The machine's private attack log (handbook A8): for the harness only,
+    # The machine's private attack log: for the evaluation harness only,
     # never bundled or exported.
     (out_dir / "private_attack_log.json").write_text(
         json.dumps(service.private_log.entries, indent=2) + "\n")

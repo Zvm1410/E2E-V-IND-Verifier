@@ -1,7 +1,7 @@
 """
 authority.py
 
-Basket C - Authority Key Initialization
+Authority key initialisation
 
 Generates the official Ed25519 key pairs for
 the presiding officer and party agents.

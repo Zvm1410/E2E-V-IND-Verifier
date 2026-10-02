@@ -1,5 +1,5 @@
 """
-B7. Two-branch OR-proof (per-candidate ballot validity proof).
+Two-branch OR-proof (per-candidate ballot validity proof).
 
 Proves that an exponential-ElGamal ciphertext (alpha, beta) encrypts 0 or 1,
 without revealing which. A ballot needs m of these, one per candidate position.
@@ -26,10 +26,10 @@ inside a single encrypted position. Without it, nothing constrains the plaintext
 and every downstream tally check still passes.
 
 Spec references: SPEC.md sections 7, 8.1, 8.2, 8.3, plus the SPEC revision 2
-amendments recorded in Execution Handbook revision 3 (in_group lower bound
+amendments recorded in SPEC revision 3 (in_group lower bound
 0 < x < p, and the alpha != 1 check as check 2 of section 8.3).
 
-Owner: basket B. This file writes to nothing and reads no board state.
+This file writes to nothing and reads no board state.
 """
 
 from __future__ import annotations
@@ -39,13 +39,12 @@ from dataclasses import dataclass
 from typing import Optional
 
 # --------------------------------------------------------------------------
-# Wiring. Adjust these three import lines to your BasketB module names.
-# Nothing else in this file needs to change.
+# Shared primitives.
 # --------------------------------------------------------------------------
 try:  # package-relative first
-    from .group import P as p, Q as q, G as g          # B2
-    from .encoding import I2B, B2I, U64, S32, L  # B3
-    from .membership import in_group           # B3b
+    from .group import P as p, Q as q, G as g          # group
+    from .encoding import I2B, B2I, U64, S32, L  # encoding
+    from .membership import in_group           # subgroup membership
 except ImportError:  # flat-directory / test fallback
     from group import P as p, Q as q, G as g           # type: ignore
     from encoding import I2B, B2I, U64, S32, L  # type: ignore
@@ -59,7 +58,7 @@ VALIDITY_PREIMAGE_LEN = 2800
 
 
 # --------------------------------------------------------------------------
-# Record shape (SPEC section 14, B3c)
+# Record shape (SPEC section 14)
 # --------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -118,7 +117,7 @@ def validity_preimage(Q: bytes, booth_id: str, ballot_serial: int,
                       a0: int, b0: int, a1: int, b1: int) -> bytes:
     """Exactly the 2800 bytes of SPEC section 8.2, in order.
 
-    Returned rather than hashed in place because B9's vectors must carry the
+    Returned rather than hashed in place because the test vectors must carry the
     raw preimage in hex: almost every failure in this project is one wrong byte
     in one preimage, and without the preimage there is no way to find which.
 
@@ -169,7 +168,7 @@ def prove_validity(v: int, r: int, alpha: int, beta: int, pk: int,
     """Build the OR-proof for one ciphertext position.
 
     v is the true plaintext, 0 or 1. r is the encryption randomness that
-    produced (alpha, beta); it is supplied by the caller (A7b commits it before
+    produced (alpha, beta); it is supplied by the caller (the pre-poll commitment of SPEC 10.1 fixes it before
     the poll opens) and is never drawn here.
 
     rng is a seeded random.Random. Draw order is fixed and load-bearing for the
@@ -222,11 +221,11 @@ def check_validity(proof: ValidityProof, alpha: int, beta: int, pk: int,
 
     candidate_index is passed explicitly and is the position the proof occupies
     in the ballot record, not proof.candidate_index. A record whose stored index
-    disagrees with its position is a B3c parse-level rejection, not this
+    disagrees with its position is a SPEC 14 parse-level rejection, not this
     function's business; binding to the position is what step 4 below enforces.
 
     Checks run in the order of SPEC section 8.3, rejecting on first failure.
-    The reason strings are what basket D's property attribution reports under P2.
+    The reason strings are what the verifier's property attribution reports under P2.
     """
     # 1. subgroup membership, on every parsed group element
     for name, x in (("alpha", alpha), ("beta", beta), ("a0", proof.a0),
@@ -237,7 +236,7 @@ def check_validity(proof: ValidityProof, alpha: int, beta: int, pk: int,
     # 2. alpha != 1. Ciphertext components only. The identity is legitimate for
     #    a0/b0/a1/b1 -- a simulated commitment equals 1 whenever f_d == r*c_d
     #    (mod q) -- and rejecting it there would make clean-mode false rejection
-    #    nonzero, which D10 forbids. alpha == 1 means r == 0, at which point
+    #    nonzero, which the zero false-rejection requirement forbids. alpha == 1 means r == 0, at which point
     #    beta == g^v and the vote is readable off the board with no key.
     if alpha == 1:
         return "alpha_is_identity"

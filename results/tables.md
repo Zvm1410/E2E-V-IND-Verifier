@@ -37,7 +37,7 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 | 1/20 | 0.047 [0.039, 0.057] | 0.106 [0.094, 0.121] | 0.222 [0.204, 0.241] | 0.405 [0.384, 0.427] | 0.637 [0.616, 0.658] | 0.917 [0.905, 0.929] |
 | 1/10 | 0.100 [0.087, 0.113] | 0.211 [0.194, 0.229] | 0.408 [0.387, 0.430] | 0.649 [0.628, 0.670] | 0.867 [0.851, 0.881] | 0.995 [0.991, 0.997] |
 
-## Table 4. Paper-audit baseline at segment scale (B10)
+## Table 4. Paper-audit baseline at segment scale
 
 | votes moved | booths touched | C0 cluster (ECI practice) | C0 SRS (upper bound) |
 |---|---|---|---|
@@ -46,19 +46,19 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 | 1000 | 125 | 0.970 | 1.0000 |
 | 250 | 250 | 1.000 | 0.9936 |
 
-## Table 5. Attack attribution on full-crypto boards (D7)
+## Table 5. Attack attribution on full-crypto boards
 
-| Attack | Hook | Expected | Verifier |
-|---|---|---|---|
-| Vote redirection | A8 | P3 | P3 |
-| Ballot stuffing | A9 | P4 | P4 |
-| Malformed ballot injection | B12 | P2 | P2 |
-| Tally manipulation | C10 | P5 | P5 |
-| Retroactive board edit | C11 | P1 | P1 |
-| (clean run) | - | Accept | Accept |
-| (configuration C1) | - | Accept, P3 not exercised | Accept, P3 not exercised |
+| Scenario | Expected | Verifier |
+|---|---|---|
+| Vote redirection | P3 | P3 |
+| Ballot stuffing | P4 | P4 |
+| Malformed ballot injection | P2 | P2 |
+| Tally manipulation | P5 | P5 |
+| Retroactive board edit | P1 | P1 |
+| (clean election) | Accept | Accept |
+| (configuration C1) | Accept, P3 not exercised | Accept, P3 not exercised |
 
-## Table 6. Full-crypto runs (D10 and fast-model check)
+## Table 6. Full-crypto runs: false rejection and the fast-model check
 
 | Measure | Value |
 |---|---|
@@ -68,13 +68,13 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 | of which detected (P3) | 3 |
 | ballots per election, serials redirected per run | 40, 8 |
 
-## Table 7. Per-ballot cost on the target hardware (A11)
+## Table 7. Per-ballot cost on the target hardware
 
 | m | encrypt p50 | prove p50 | total p50 | total p99 |
 |---|---|---|---|---|
 | — | — | — | — | — |
 
-## Sanity checks (D9)
+## Sanity checks
 
 - A0 under C2 reproduces 1-(1-p)^k across 18 cells (Bonferroni family-wise 95%): True
 - Cells outside their own 95% interval (about 1 in 20 expected by chance): p=1/10 k=2

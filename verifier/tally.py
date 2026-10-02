@@ -1,4 +1,4 @@
-"""D4: aggregation and decryption transcript verification (SPEC 13, P5)."""
+"""Aggregation and decryption transcript verification (SPEC 13, P5)."""
 
 from math import isqrt
 

@@ -43,7 +43,7 @@ class AdminScreen(QWidget):
         self.register_panel = PollRegisterPanel()
         layout.addWidget(self.register_panel)
 
-        layout.addWidget(self._section("Challenge and Spoil (A7)"))
+        layout.addWidget(self._section("Challenge and Spoil"))
         challenge_row = QHBoxLayout()
         self.challenge_button = QPushButton("CHALLENGE LAST BALLOT")
         self.challenge_button.setProperty("class", "danger")
@@ -82,7 +82,7 @@ class AdminScreen(QWidget):
         layout.addWidget(self.tally_toggle)
         layout.addWidget(self.retroactive_edit_toggle)
 
-        layout.addWidget(self._section("Adversary Simulation (A10)"))
+        layout.addWidget(self._section("Adversary Simulation"))
         self.adversary_select = QComboBox()
         for adversary in AdversaryClass:
             self.adversary_select.addItem(adversary.value, adversary)
@@ -91,7 +91,7 @@ class AdminScreen(QWidget):
         layout.addWidget(self.adversary_select)
         layout.addWidget(self.adversary_result)
 
-        layout.addWidget(self._section("Hardware Benchmark (A11)"))
+        layout.addWidget(self._section("Hardware Benchmark"))
         benchmark_row = QHBoxLayout()
         self.benchmark_button = QPushButton("RUN 500 BALLOTS")
         self.benchmark_button.clicked.connect(self.run_benchmark)
@@ -123,7 +123,7 @@ class AdminScreen(QWidget):
         self.export_button.setEnabled(False)
         layout.addWidget(self.export_button)
 
-        layout.addWidget(QLabel("Bundle tag (e.g. 'clean', 'A8', 'B12'):"))
+        layout.addWidget(QLabel("Bundle tag (e.g. 'clean', 'redirection', 'malformed'):"))
         self.bundle_tag_input = QLineEdit()
         self.bundle_tag_input.setPlaceholderText("clean")
         self.bundle_tag_input.setText("clean")
@@ -247,7 +247,7 @@ class AdminScreen(QWidget):
         self.refresh()
 
         # ------------------------------------------------------------------
-    # Election Lifecycle handlers (Patch 4 - GUI-driven board production)
+    # Election lifecycle: close, tally, sign and export from the GUI
     # ------------------------------------------------------------------
 
     def close_poll(self) -> None:
@@ -274,7 +274,7 @@ class AdminScreen(QWidget):
     def compute_tally(self) -> None:
         """Aggregate ciphertexts per candidate, threshold-decrypt,
         recover the per-candidate vote counts, and write the tally
-        sections to the board. Fires C10 (tally manipulation) here if
+        sections to the board. Fires the tally-manipulation hook here if
         that attack toggle is on."""
         import random
         from tally.threshold import (
@@ -346,10 +346,10 @@ class AdminScreen(QWidget):
                 ],
             }
 
-            # C10 attack hook -----------------------------------------
+            # Tally-manipulation hook ---------------------------------
             if svc.attack_config.tally_manipulation_enabled:
                 svc.board["tally_declaration"]["totals"][0]["votes"] += 100
-                c10_note = "\n\n!! ATTACK C10 active: CAND-A tally +100"
+                c10_note = "\n\n!! Tally-manipulation attack active: CAND-A tally +100"
             else:
                 c10_note = ""
 
@@ -371,7 +371,7 @@ class AdminScreen(QWidget):
 
     def export_board(self) -> None:
         """Compute digest, produce officer + agent multisignature,
-        write board.json and signatures.json to disk. Fires C11
+        write board.json and signatures.json to disk. Fires the retroactive-edit hook
         (retroactive board edit) here if that attack toggle is on."""
         from pathlib import Path
         from board import board as bb
@@ -404,7 +404,7 @@ class AdminScreen(QWidget):
             )
             write_signature_file(sigfile, str(sig_path))
 
-            # C11 attack hook -----------------------------------------
+            # Retroactive-edit hook -----------------------------------
             if svc.attack_config.retroactive_board_edit_enabled:
                 if svc.board["ballots"]:
                     b0 = svc.board["ballots"][0]
@@ -413,7 +413,7 @@ class AdminScreen(QWidget):
                         ("f" if a[0] != "f" else "0") + a[1:]
                     )
                     bb.write_board(svc.board, str(board_path))
-                    c11_note = "\n!! ATTACK C11 active: ballot 1 mutated after signing"
+                    c11_note = "\n!! Retroactive-edit attack active: ballot 1 mutated after signing"
                 else:
                     c11_note = ""
             else:

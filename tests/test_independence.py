@@ -1,4 +1,4 @@
-# Handbook section 1.2: the verifier must never import prover code.
+# The verifier must never import the prover's cryptography (see INDEPENDENCE.md).
 import pathlib
 import re
 

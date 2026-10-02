@@ -1,4 +1,4 @@
-"""Ballot proof verification: D3 (SPEC 8.3) and D3b (SPEC 9.3).
+"""Ballot proof verification: validity proofs (SPEC 8.3) and the sum-to-one proof (SPEC 9.3).
 
 Each function raises ProofFailure naming the first check that failed, in
 the order SPEC fixes. All values arrive already parsed, so subgroup
@@ -77,7 +77,7 @@ def verify_sum_proof(q_hash, booth_id, serial, pk, ciphertexts, proof):
 
 
 def verify_ballot(q_hash, pk, ballot):
-    """D3 then D3b for one parsed ballot. Raises ProofFailure with the position."""
+    """Validity proofs, then the sum proof, for one parsed ballot. Raises ProofFailure with the position."""
     for i, ((alpha, beta), proof) in enumerate(zip(ballot.ciphertexts, ballot.validity_proofs)):
         try:
             verify_validity_proof(q_hash, ballot.booth_id, ballot.ballot_serial, i, pk,

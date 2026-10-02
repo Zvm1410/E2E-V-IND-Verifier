@@ -1,8 +1,8 @@
-"""D2: subgroup membership, range checks and the strict parser.
+"""Subgroup membership, range checks and the strict parser.
 
-The ballot built here is shaped like SPEC 14 but its proofs are not valid;
-D2 only checks encoding and shape, D3 checks the proofs. Real ballot and
-board vectors replace these fixtures when ballot.json and board.json land.
+The ballot built here is shaped like SPEC 14 but its proofs are not valid:
+the parser checks encoding and shape only, and the proofs are checked in
+tests/test_proofs.py.
 """
 
 import copy

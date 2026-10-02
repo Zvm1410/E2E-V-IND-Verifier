@@ -1,10 +1,10 @@
-# Benchmarking on the Raspberry Pi (handbook A11)
+# Benchmarking on the Raspberry Pi
 
 What the paper reports: per-ballot cost of encryption and proof generation
 on the target hardware, as distributions (not averages), at least 500
 ballots, and how it scales with the number of candidates m.
 
-`harness/bench.py` measures exactly that on the real prover: B's
+`harness/bench.py` measures exactly that on the real prover:
 `encrypt_selection` (encryption alone) and `encrypt_and_prove` (encryption
 and all m + 1 proofs), per ballot, for each m. It verifies the first ballot
 of every m with the independent verifier, so a broken prover cannot produce
@@ -65,9 +65,9 @@ ballots prints a remaining-time estimate.
 
 ## Optional
 
-- `--verify` also times the verifier per ballot (D9's runtime figure). The
+- `--verify` also times the verifier per ballot. The
   verifier normally runs on any computer, not on the voting machine, so this
-  is not part of A11 and roughly doubles the run.
+  is not part of the hardware figures and roughly doubles the run.
 - The kiosk's admin panel ("RUN 500 BALLOTS") times the full cast path
   through the GUI service, including building the board record. It is a
   spot check; the paper's figures come from `harness/bench.py`.

@@ -1,4 +1,4 @@
-"""Adversary feature interface for fingerprinting study (A10)."""
+"""Adversary feature interface for the fingerprinting study."""
 
 from __future__ import annotations
 

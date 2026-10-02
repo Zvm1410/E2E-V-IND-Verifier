@@ -1,7 +1,7 @@
-"""D4: aggregation, partial decryption proofs, Lagrange, tally recovery.
+"""Aggregation, partial decryption proofs, Lagrange coefficients, tally recovery.
 
 Byte-exact against spec/vectors/decryption.json (including every partial
-proof preimage), then end to end on C's clean and C10 boards.
+proof preimage), then on the revision 2 clean and tally-manipulation boards.
 """
 
 import dataclasses
@@ -13,7 +13,7 @@ import pytest
 from tests.vectors import load
 from verifier.group import G, P
 from verifier.hashes import partial_preimage
-from tests.legacy import parse_legacy
+from tests.boards_v2 import parse_v2
 from verifier.parse import SumProof, load_json, parse_board
 from verifier.result import CheckFailure
 from verifier.tally import (
@@ -24,7 +24,7 @@ from verifier.tally import (
     verify_partial,
 )
 
-BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
+BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards-v2"
 V = load("decryption.json")
 Q_HASH = bytes.fromhex(V["base_hash"])
 COMMIT = {c["trustee_index"]: int(c["commitment"], 16) for c in V["trustee_commitments"]}
@@ -90,7 +90,7 @@ def test_bsgs_agrees_with_brute_force():
 
 
 def _board(name):
-    return parse_legacy(load_json((BOARDS / name / "board.json").read_bytes()))
+    return parse_v2(load_json((BOARDS / name / "board.json").read_bytes()))
 
 
 @pytest.fixture(scope="module")
@@ -102,9 +102,9 @@ def test_clean_board_tally_verifies(clean):
     check_tally(clean)
 
 
-def test_c10_tally_manipulation_rejected_as_p5():
+def test_tally_manipulation_rejected_as_p5():
     with pytest.raises(CheckFailure) as exc:
-        check_tally(_board("C10-tally-tamper"))
+        check_tally(_board("tally-manipulation"))
     assert exc.value.prop == "P5"
 
 

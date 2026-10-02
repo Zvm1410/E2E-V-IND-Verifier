@@ -1,5 +1,5 @@
-"""D5: digest, signatures, register cross-check. Each failure is triggered
-by breaking exactly one thing (handbook D5 sanity check)."""
+"""Digest, signatures, register cross-check. Each failure is triggered by
+breaking exactly one thing."""
 
 import dataclasses
 import json
@@ -8,11 +8,11 @@ import pathlib
 import pytest
 
 from verifier.integrity import check_ballot_count, check_board_integrity
-from tests.legacy import parse_legacy
+from tests.boards_v2 import parse_v2
 from verifier.parse import load_json, parse_board, parse_signatures
 from verifier.result import CheckFailure
 
-BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
+BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards-v2"
 
 
 def _load(name):
@@ -20,7 +20,7 @@ def _load(name):
     raw = (d / "board.json").read_bytes()
     obj = load_json(raw)
     sig = parse_signatures(load_json((d / "signatures.json").read_bytes()))
-    return raw, obj, parse_legacy(obj), sig
+    return raw, obj, parse_v2(obj), sig
 
 
 @pytest.fixture(scope="module")
@@ -48,9 +48,9 @@ def test_one_byte_edit_changes_digest(clean):
         check_board_integrity(raw2, edited, board, sig)
 
 
-def test_c11_retroactive_edit_is_p1():
+def test_retroactive_edit_is_p1():
     with pytest.raises(CheckFailure) as exc:
-        check_board_integrity(*_load("C11-retroactive-edit"))
+        check_board_integrity(*_load("board-edit"))
     assert exc.value.prop == "P1"
 
 
@@ -93,7 +93,7 @@ def test_officer_signature_required(clean):
 
 def test_signature_over_other_digest_fails(clean):
     raw, obj, board, sig = clean
-    other = _load("A8-redirection")[3]
+    other = _load("redirection")[3]
     with pytest.raises(CheckFailure, match="officer"):
         check_board_integrity(raw, obj, board, dataclasses.replace(other, digest=sig.digest))
 
@@ -133,7 +133,7 @@ def test_issued_serial_without_prepoll_commitment(clean):
         check_ballot_count(dataclasses.replace(board, prepoll=pre))
 
 
-def test_a9_stuffing_is_p4():
+def test_stuffing_is_p4():
     with pytest.raises(CheckFailure) as exc:
-        check_ballot_count(_load("A9-stuffing")[2])
+        check_ballot_count(_load("stuffing")[2])
     assert exc.value.prop == "P4"

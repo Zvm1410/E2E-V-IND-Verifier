@@ -1,17 +1,17 @@
-"""Hardware benchmark (handbook A11), headless, for the Raspberry Pi.
+"""Hardware benchmark, headless, for the Raspberry Pi.
 
 Times, per ballot and for each candidate count m:
 
-    encrypt_ms   B's encrypt_selection: m ciphertexts, no proofs
-    prove_ms     B's encrypt_and_prove minus encrypt_ms: the m validity
+    encrypt_ms   crypto.elgamal.encrypt_selection: m ciphertexts, no proofs
+    prove_ms     encrypt_and_prove minus encrypt_ms: the m validity
                  proofs and the sum proof
-    total_ms     B's encrypt_and_prove, end to end
+    total_ms     crypto.encrypt_and_prove, end to end
     verify_ms    this repository's verify_ballot on the same record (--verify;
-                 that is D9's runtime figure, not A11's, and roughly doubles
+                 that is the verifier's runtime, not the machine's, and roughly doubles
                  the run)
 
 and reports distributions (min, p50, p90, p99, max, mean), not averages,
-because a long tail is a finding (handbook A11). Peak resident memory is
+because a long tail is a finding. Peak resident memory is
 read from the OS once at the end, not simulated.
 
 Run from the project root. Only three prover entry points are called, by
@@ -175,7 +175,7 @@ def main(argv=None):
     ap.add_argument("--out", default=str(HERE / "results"))
     args = ap.parse_args(argv)
     if args.ballots < 500:
-        print("note: handbook A11 asks for at least 500 ballots", file=sys.stderr)
+        print("note: at least 500 ballots are recommended for stable tails", file=sys.stderr)
     m_values = [int(x) for x in args.m.split(",")]
 
     rows = run(args.repo, args.ballots, m_values, args.seed, args.warmup, args.verify)

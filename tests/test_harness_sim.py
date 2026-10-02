@@ -1,4 +1,4 @@
-"""D8 and D9 sanity checks on the fast election model."""
+"""Sanity checks on the fast election model."""
 
 from fractions import Fraction
 
@@ -16,22 +16,22 @@ def _rate(config, adversary, k, p, runs, **kw):
     return hits, runs
 
 
-def test_d8_same_seed_same_outcome():
+def test_same_seed_same_outcome():
     a = simulate("C2", "A2", 5, P, seed=1234, tester="naive")
     b = simulate("C2", "A2", 5, P, seed=1234, tester="naive")
     assert a == b
 
 
 @pytest.mark.parametrize("k", [1, 5, 20])
-def test_d9_blind_adversary_reproduces_analytic_bound(k):
-    """D9 sanity check 1: C2 under A0 must give 1 - (1 - p)^k within the interval."""
+def test_blind_adversary_reproduces_analytic_bound(k):
+    """C2 under A0 must give 1 - (1 - p)^k within the interval."""
     hits, runs = _rate("C2", "A0", k, P, 3000)
     lo, hi = wilson(hits, runs)
     assert lo <= 1 - (1 - float(P)) ** k <= hi
 
 
-def test_d9_oracle_drives_detection_to_zero():
-    """D9 sanity check 2 (handbook A10 calibration): AOracle knows the schedule."""
+def test_oracle_drives_detection_to_zero():
+    """Calibration: AOracle knows the schedule, so detection must be zero."""
     hits, runs = _rate("C2", "AOracle", 20, P, 1000)
     assert hits == 0
 

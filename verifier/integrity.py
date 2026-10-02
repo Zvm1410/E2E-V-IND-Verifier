@@ -1,4 +1,4 @@
-"""D5: digest, signatures and register cross-check (SPEC 12, 15, 16 P1 and P4)."""
+"""Digest, signatures and register cross-check (SPEC 12, 15, 16 P1 and P4)."""
 
 import hashlib
 import json

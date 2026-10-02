@@ -1,27 +1,19 @@
 """Trusted dealer for the election secret key.
 
-The handbook (Basket C, task list, ``Note for the paper``) explicitly
-permits a trusted dealer instead of a distributed key-generation
-protocol: *"we use a trusted dealer to hand out shares rather than a
-full distributed key generation. This is a deliberate simplification
-and it changes nothing that the verifier checks."*
-
-Basket C provided ``sss.py`` (Shamir over q) and ``authority.py``
-(Ed25519 officer/agent keys) but never wired them together into an
-actual key ceremony. This module does that wiring and nothing more:
+A trusted dealer stands in for distributed key generation. This is a
+deliberate simplification: it changes nothing the verifier checks, since
+the partial decryptions, their proofs and the commitments are the same
+either way (SPEC section 18).
 
     1. draw sk uniformly in [1, q)                    (SPEC section 6)
     2. compute pk = g^sk mod p                        (SPEC section 6)
     3. split sk into n shares with threshold t        (sss.split_secret)
     4. compute per-trustee commitments h_j = g^s_j    (SPEC section 6)
 
-The dealer's copy of sk is discarded after the split. Shares are held
-by trustees; only public data (pk, {h_j}) reaches the bulletin board.
-
-NO NEW CRYPTOGRAPHY IS INTRODUCED HERE. Every mathematical operation
-comes from ``crypto.elgamal``, ``crypto.group`` or ``tally.sss``; this
-module only chooses inputs and hands the outputs to Basket C's
-existing tally code.
+The dealer's copy of sk is discarded after the split. Shares are held by
+trustees; only public data (pk, {h_j}) reaches the bulletin board. Every
+mathematical operation comes from ``crypto.elgamal``, ``crypto.group`` or
+``tally.sss``.
 """
 
 from __future__ import annotations
@@ -61,7 +53,7 @@ def run_dealer(
     Determinism is provided by ``random.Random(seed)`` for sk selection
     and by Shamir's own ``seed`` argument for the polynomial. Neither
     is a security claim; production would use ``secrets`` and a real
-    DKG. See the handbook note quoted at the top of this module.
+    DKG. See the note at the top of this module.
     """
     if not (1 <= t <= n):
         raise ValueError(f"threshold t={t} out of range for n={n}")

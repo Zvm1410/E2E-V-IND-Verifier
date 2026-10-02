@@ -1,5 +1,5 @@
 """
-record.py — SPEC.md v1 revision 2, section 14 (task B3c: ballot record shape).
+record.py — SPEC section 14 (ballot record shape).
 
 Assembles the JSON ballot record and checks the structural half of P2 from
 section 16: exactly m ciphertexts and m validity proofs, ordered by
@@ -95,7 +95,7 @@ def build_ballot_record(
     """Build the section 14 'ballot' record and validate its shape.
 
     There is no timestamp field, by design: section 14 keeps timing in the
-    machine's private log because it is a fingerprinting feature for basket A's
+    machine's private log because it is a fingerprinting feature for the
     adversaries, and publishing it would leak the signal the paper studies.
     """
     record: Dict[str, Any] = {

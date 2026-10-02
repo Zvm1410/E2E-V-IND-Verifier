@@ -1,4 +1,4 @@
-"""D7: the verifier entry point, with property attribution (SPEC 16).
+"""The verifier entry point, with property attribution (SPEC 16).
 
 Properties run in the order P1, P2, P3, P4, P5 and the first failure is
 reported with the record that caused it. Each property ends in one of:
@@ -111,7 +111,7 @@ def main(argv=None):
     import pathlib
     import sys
 
-    ap = argparse.ArgumentParser(description="Independent verifier (basket D).")
+    ap = argparse.ArgumentParser(description="Independent verifier.")
     ap.add_argument("board", type=pathlib.Path)
     ap.add_argument("signatures", type=pathlib.Path)
     ap.add_argument("--tester", type=pathlib.Path,

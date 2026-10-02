@@ -1,7 +1,7 @@
 """
 threshold.py
 
-Basket C - Threshold Decryption
+Threshold Decryption
 SPEC.md Section 13.2 and 13.3
 """
 
@@ -411,7 +411,7 @@ def build_decryption_transcript(
     print("Threshold decryption: PASSED")
 
     # ================================================
-    # 7. Decryption transcript + C4/B6 proof
+    # 7. Decryption transcript + Chaum-Pedersen proof
     # ================================================
 
     rng = random.Random(42)
@@ -469,5 +469,5 @@ def build_decryption_transcript(
 
     print()
     print("===================================")
-    print("ALL C13 SANITY CHECKS PASSED")
+    print("ALL THRESHOLD SANITY CHECKS PASSED")
     print("===================================")'''
