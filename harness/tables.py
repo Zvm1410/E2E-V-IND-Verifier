@@ -48,6 +48,15 @@ def _cell(rows, **match):
     return DASH
 
 
+def _rate(rows, **match):
+    """Detection rate of one C2 cell at the headline test rate, or a dash."""
+    for r in rows:
+        if r["config"] == "C2" and r["p"] == HEADLINE_P and \
+                all(str(r[k]) == str(v) for k, v in match.items()):
+            return f"{float(r['rate']):.2f}"
+    return DASH
+
+
 def _table(header, body):
     lines = ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
     lines += ["| " + " | ".join(str(c) for c in row) + " |" for row in body]
@@ -87,22 +96,51 @@ def by_rate(rows, k_values, p_values):
     return _table(["test rate p"] + [f"k={k}" for k in k_values], body)
 
 
-def cluster_vs_srs():
-    """C0 at assembly-segment scale: 250 booths of 800, five audited."""
+SEGMENT_BOOTHS, SEGMENT_SIZE, SEGMENT_AUDITED = 250, 800, 5
+SEGMENT_SCENARIOS = ((10, 1), (50, 1), (50, 5), (200, 5), (1000, 5), (1000, 25),
+                     (1000, 125), (250, 250))
+
+
+def segment_effort():
+    """Units handled per assembly segment by each mechanism."""
+    n = SEGMENT_BOOTHS * SEGMENT_SIZE
+    slips = SEGMENT_AUDITED * SEGMENT_SIZE
+    body = [
+        ["C0 cluster (current practice)", f"{SEGMENT_AUDITED} booths hand-counted",
+         f"{slips:,} slips", "after the poll"],
+        ["C0 simple random sample", "individual slips at the same rate",
+         f"{slips:,} slips", "after the poll"],
+        ["C2, p = 1/50", f"{SEGMENT_SIZE // 50} test ballots per booth",
+         f"{n // 50:,} test ballots", "during the poll"],
+        ["C2, p = 1/20", f"{SEGMENT_SIZE // 20} test ballots per booth",
+         f"{n // 20:,} test ballots", "during the poll"],
+    ]
+    return _table(["Mechanism", "What is done", "Units per segment", "When"], body)
+
+
+def segment_comparison():
+    """Detection at assembly-segment scale (250 booths of 800, 200,000 ballots)
+    for the same manipulation under each mechanism. C0 from baseline_c0 (exact);
+    C2 is 1-(1-p)^k for a blind adversary, the bound the simulated and
+    full-crypto runs reproduce: each serial is drawn independently, so booth
+    boundaries do not enter it."""
     try:
         from baseline_c0 import (allocate_manipulation, c0_cluster, c0_srs,
                                  same_rate_sample_size)
     except ImportError:
         return DASH
-    booths, size, audited = 250, 800, 5
+    booths, size, audited = SEGMENT_BOOTHS, SEGMENT_SIZE, SEGMENT_AUDITED
     s = same_rate_sample_size([size] * booths, audited)
     body = []
-    for votes, touched in ((1000, 5), (1000, 25), (1000, 125), (250, 250)):
+    for votes, touched in SEGMENT_SCENARIOS:
         counts = allocate_manipulation(votes, booths, touched, booth_capacity=size)
-        body.append([votes, touched, f"{float(c0_cluster(counts, audited)):.3f}",
-                     f"{float(c0_srs(booths * size, votes, s)):.4f}"])
-    return _table(["votes moved", "booths touched", "C0 cluster (ECI practice)",
-                   "C0 SRS (upper bound)"], body)
+        body.append([votes, touched,
+                     f"{float(c0_cluster(counts, audited)):.3f}",
+                     f"{float(c0_srs(booths * size, votes, s)):.3f}",
+                     f"{1 - (1 - 1 / 50) ** votes:.3f}",
+                     f"{1 - (1 - 1 / 20) ** votes:.3f}"])
+    return _table(["votes moved", "booths touched", "C0 cluster", "C0 random sample",
+                   "C2, p = 1/50", "C2, p = 1/20"], body)
 
 
 def attribution(results):
@@ -164,14 +202,45 @@ def render(results):
         "",
         f"## Table 1. Vote redirection detected, by configuration (p = {HEADLINE_P})",
         "", headline(rows, k_values), "",
+        "At the same sampling rate, test ballots (C2) and a simple random sample of "
+        "slips (C0) detect a blind redirection equally; the comparison that matters is "
+        "at matched effort against current practice (Table 4).",
+        "",
         f"## Table 2. Fingerprinting adversaries under C2 (p = {HEADLINE_P})",
         "", fingerprinting(rows, k_values), "",
+        "Detection under C2 assumes an honest, disciplined tester. A tester whose "
+        "behaviour differs from voters' (the naive regime) lets A2 evade most "
+        f"challenges: at k = {max(k_values)} detection is "
+        f"{_rate(rows, adversary='A2', tester='naive', k=max(k_values))} against "
+        f"{_rate(rows, adversary='A0', k=max(k_values))} for a blind adversary. A "
+        "compromised tester is outside the threat model.",
+        "",
         "## Table 3. C2 with a blind adversary, by test rate",
         "", by_rate(rows, k_values, p_values), "",
-        "## Table 4. Paper-audit baseline at segment scale",
-        "", cluster_vs_srs(), "",
+        "## Table 4. Assembly segment: detection at matched effort",
+        "",
+        f"A segment of {SEGMENT_BOOTHS} booths of {SEGMENT_SIZE} voters. Units handled "
+        "by each mechanism:",
+        "", segment_effort(), "",
+        "Probability that the same manipulation is detected (blind adversary, honest "
+        "paper trail for C0, honest and disciplined tester for C2):",
+        "", segment_comparison(), "",
+        "C2 at p = 1/50 handles the same number of units as current practice. Per unit "
+        "handled it detects exactly as well as a simple random sample of slips, and "
+        "better than cluster sampling whenever the manipulation is concentrated in a few "
+        "booths; spread one vote per booth, cluster sampling is marginally ahead. Units are not "
+        "labour: a test ballot is cast, challenged and compared, which costs more than "
+        "counting a slip, and C2's units fall during the poll at every booth. The "
+        "comparison holds for a blind adversary; Table 2 shows how fingerprinting reduces "
+        "C2's detection, and C0's detection falls in turn if the paper trail itself is "
+        "unreliable (baseline_c0's parameter d).",
+        "",
         "## Table 5. Attack attribution on full-crypto boards",
         "", attribution(results), "",
+        "Each board is verified with its tester's record (SPEC 11.1). Without it the "
+        "redirection board is accepted: the machine opened the challenged ballots "
+        "truthfully, which is consistent on the board.",
+        "",
         "## Table 6. Full-crypto runs: false rejection and the fast-model check",
         "", full_runs(results), "",
         "## Table 7. Per-ballot cost on the target hardware",

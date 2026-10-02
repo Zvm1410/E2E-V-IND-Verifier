@@ -99,6 +99,23 @@ the full-crypto runs are the check on it.
 | A3 | A leaked copy of the schedule, partly correct |
 | AOracle | The true schedule (calibration) |
 
+## What the guarantees assume
+
+- **Cast-as-intended (P3) is verifiable given an honest, disciplined
+  tester.** A machine that redirects a vote and then opens the challenged
+  ballot truthfully leaves a consistent board; only the tester's own record
+  of what they pressed shows the mismatch (SPEC 11.1). That record is held by
+  the tester, not published, so the public verifier on its own checks P3's
+  board-level conditions only, and reports P3 as passed if they hold. Pass the
+  record with `--tester` for the full check. A compromised tester is outside
+  the threat model, and a tester whose behaviour differs from voters' lets a
+  fingerprinting machine avoid most challenges (`results/tables.md`, Table 2).
+- **P1, P2, P4 and P5 need no trusted party:** anyone with the board and the
+  signature file can check them.
+- **Detection figures** are for a blind adversary unless the table says
+  otherwise, and compare mechanisms at matched units handled, not matched
+  labour (Table 4).
+
 ## Tests
 
 ```

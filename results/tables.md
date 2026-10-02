@@ -13,6 +13,8 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 | 20 | 0.646 [0.625, 0.667] | 0.000 [0.000, 0.002] | 0.637 [0.616, 0.658] | 0.642 |
 | 50 | 0.936 [0.925, 0.946] | 0.000 [0.000, 0.002] | 0.917 [0.905, 0.929] | 0.923 |
 
+At the same sampling rate, test ballots (C2) and a simple random sample of slips (C0) detect a blind redirection equally; the comparison that matters is at matched effort against current practice (Table 4).
+
 ## Table 2. Fingerprinting adversaries under C2 (p = 1/20)
 
 | Adversary (C2) | k=1 | k=2 | k=5 | k=10 | k=20 | k=50 |
@@ -29,6 +31,8 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 | A3 leakage 0.75 | 0.016 [0.011, 0.022] | 0.026 [0.020, 0.034] | 0.068 [0.058, 0.080] | 0.113 [0.099, 0.127] | 0.237 [0.219, 0.257] | 0.502 [0.480, 0.524] |
 | A3 leakage 1.0 | 0.000 [0.000, 0.002] | 0.000 [0.000, 0.002] | 0.000 [0.000, 0.002] | 0.000 [0.000, 0.002] | 0.000 [0.000, 0.002] | 0.000 [0.000, 0.002] |
 
+Detection under C2 assumes an honest, disciplined tester. A tester whose behaviour differs from voters' (the naive regime) lets A2 evade most challenges: at k = 50 detection is 0.22 against 0.92 for a blind adversary. A compromised tester is outside the threat model.
+
 ## Table 3. C2 with a blind adversary, by test rate
 
 | test rate p | k=1 | k=2 | k=5 | k=10 | k=20 | k=50 |
@@ -37,14 +41,31 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 | 1/20 | 0.047 [0.039, 0.057] | 0.106 [0.094, 0.121] | 0.222 [0.204, 0.241] | 0.405 [0.384, 0.427] | 0.637 [0.616, 0.658] | 0.917 [0.905, 0.929] |
 | 1/10 | 0.100 [0.087, 0.113] | 0.211 [0.194, 0.229] | 0.408 [0.387, 0.430] | 0.649 [0.628, 0.670] | 0.867 [0.851, 0.881] | 0.995 [0.991, 0.997] |
 
-## Table 4. Paper-audit baseline at segment scale
+## Table 4. Assembly segment: detection at matched effort
 
-| votes moved | booths touched | C0 cluster (ECI practice) | C0 SRS (upper bound) |
+A segment of 250 booths of 800 voters. Units handled by each mechanism:
+
+| Mechanism | What is done | Units per segment | When |
 |---|---|---|---|
-| 1000 | 5 | 0.097 | 1.0000 |
-| 1000 | 25 | 0.412 | 1.0000 |
-| 1000 | 125 | 0.970 | 1.0000 |
-| 250 | 250 | 1.000 | 0.9936 |
+| C0 cluster (current practice) | 5 booths hand-counted | 4,000 slips | after the poll |
+| C0 simple random sample | individual slips at the same rate | 4,000 slips | after the poll |
+| C2, p = 1/50 | 16 test ballots per booth | 4,000 test ballots | during the poll |
+| C2, p = 1/20 | 40 test ballots per booth | 10,000 test ballots | during the poll |
+
+Probability that the same manipulation is detected (blind adversary, honest paper trail for C0, honest and disciplined tester for C2):
+
+| votes moved | booths touched | C0 cluster | C0 random sample | C2, p = 1/50 | C2, p = 1/20 |
+|---|---|---|---|---|---|
+| 10 | 1 | 0.020 | 0.183 | 0.183 | 0.401 |
+| 50 | 1 | 0.020 | 0.636 | 0.636 | 0.923 |
+| 50 | 5 | 0.097 | 0.636 | 0.636 | 0.923 |
+| 200 | 5 | 0.097 | 0.982 | 0.982 | 1.000 |
+| 1000 | 5 | 0.097 | 1.000 | 1.000 | 1.000 |
+| 1000 | 25 | 0.412 | 1.000 | 1.000 | 1.000 |
+| 1000 | 125 | 0.970 | 1.000 | 1.000 | 1.000 |
+| 250 | 250 | 1.000 | 0.994 | 0.994 | 1.000 |
+
+C2 at p = 1/50 handles the same number of units as current practice. Per unit handled it detects exactly as well as a simple random sample of slips, and better than cluster sampling whenever the manipulation is concentrated in a few booths; spread one vote per booth, cluster sampling is marginally ahead. Units are not labour: a test ballot is cast, challenged and compared, which costs more than counting a slip, and C2's units fall during the poll at every booth. The comparison holds for a blind adversary; Table 2 shows how fingerprinting reduces C2's detection, and C0's detection falls in turn if the paper trail itself is unreliable (baseline_c0's parameter d).
 
 ## Table 5. Attack attribution on full-crypto boards
 
@@ -57,6 +78,8 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 | Retroactive board edit | P1 | P1 |
 | (clean election) | Accept | Accept |
 | (configuration C1) | Accept, P3 not exercised | Accept, P3 not exercised |
+
+Each board is verified with its tester's record (SPEC 11.1). Without it the redirection board is accepted: the machine opened the challenged ballots truthfully, which is consistent on the board.
 
 ## Table 6. Full-crypto runs: false rejection and the fast-model check
 

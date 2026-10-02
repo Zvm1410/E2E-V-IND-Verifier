@@ -721,7 +721,7 @@ The verifier outputs `Accept`, or `Reject` together with the property that faile
 
 **P2 ballot well-formedness.** Every ballot has exactly `m` ciphertexts in order, every group element is in `G`, every validity proof passes section 8.3, every sum-to-one proof passes section 9.3.
 
-**P3 cast-as-intended.** Every spoil record passes section 11, including the tester's comparison of section 11.1 where the tester's selections are supplied. The set of spoil records equals the schedule recomputed from the revealed seed. Every spoiled ballot is excluded from the aggregate.
+**P3 cast-as-intended.** Every spoil record passes section 11, including the tester's comparison of section 11.1 where the tester's selections are supplied. The set of spoil records equals the schedule recomputed from the revealed seed. Every spoiled ballot is excluded from the aggregate. P3 is verifiable given an honest tester who follows the schedule (section 18 item 4). The tester's selections are held by the tester, not published on the board; without them P3 covers the board-level checks only (openings, commitments, the schedule, exclusion from the aggregate), and a redirecting machine that opens challenged ballots truthfully passes them.
 
 **P4 ballot-count integrity.** Serials run 1 to `ballots_issued` with no gap or repeat, register counts are internally consistent, the number of ballots entering the aggregate equals `ballots_counted`, and every published randomness commitment corresponds to an issued serial.
 
