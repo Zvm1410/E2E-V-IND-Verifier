@@ -23,6 +23,7 @@ received (commit b2feb5e), so `git log -p --follow <file>` shows every change.
 | `export_bundle.py` (was `bundle_for_basket_d.py`) | Copies the tester record into the bundle; describes the files only | The old README described P3 to P5 differently from SPEC 16. |
 | `app/services/benchmark.py` | Real timings and the process's peak RSS | It reported an invented proof time (`cast_ms * 0.7`) and memory from `random.uniform`. |
 | `app/ui/screens/admin_screen.py` | Challenge refused on unscheduled serials; the re-encryption check is actually run and its result shown; bundle labels renamed | The panel printed "re-encryption stub matches" without checking, and allowed spoils the schedule never drew. |
+| `tally/c10.py`, `tally/c12.py` (removed) | Never imported. `c12.py` set the test rate to a bare 0 rather than the `num`/`den` pair the loader requires, and its `generate_test_schedule` returned `[]` or `None`; `c10.py` duplicated `run_election.py --tamper-tally` | One implementation each: C1 is `config/election_c1.json` with the schedule from `testing_authority.py`; C10 is `--tamper-tally`. |
 | `config/election_c1.json` | `test_rate.num = 0` | Configuration C1 (handbook C12). |
 | `make_bundles.sh` | Builds all seven bundles | One command for the clean run, five attacks and C1. |
 
