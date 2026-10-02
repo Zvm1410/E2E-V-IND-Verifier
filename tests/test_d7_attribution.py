@@ -1,10 +1,10 @@
-"""D7: end-to-end verification and property attribution on C's six boards.
+"""D7 on the revision 2 boards exactly as exported.
 
-Expected attribution is the table in handbook D7 / SPEC 16. Three boards
-cannot reach their expected property until the pre-poll commitments follow
-SPEC 10 (see tests/test_d6_spoils.py): P3 runs before P4 and P5 and fails
-first on every board, including the clean one. Those are strict xfails, so
-the day the boards are regenerated correctly this file says so.
+Every one of them publishes each serial's secret nonce in the pre-poll
+section, so each is rejected under P1, C11 first at the digest. The
+attribution table proper is tested on these boards with the pre-poll
+section corrected (tests/test_d7_spec10_rebuilt.py) and on regenerated
+boards when present (tests/test_e2e_regenerated.py).
 """
 
 import pathlib
@@ -12,75 +12,46 @@ import pathlib
 import pytest
 
 import verifier.verify as v
+from tests.legacy import strip_nonces
 from verifier.spoils import NOT_EXERCISED
 
 BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
-BLOCKED = "pre-poll commitments do not follow SPEC 10.1/10.2, so P3 fails first"
-
-_cache = {}
+NONCE_LEAK = ["clean", "A8-redirection", "A9-stuffing", "B12-malformed", "C10-tally-tamper"]
 
 
-def _verify(name, **kw):
-    key = (name, tuple(sorted(kw)))
-    if key not in _cache:
-        d = BOARDS / name
-        _cache[key] = v.verify((d / "board.json").read_bytes(),
-                               (d / "signatures.json").read_bytes(), compat=True, **kw)
-    return _cache[key]
+def _files(name):
+    d = BOARDS / name
+    return (d / "board.json").read_bytes(), (d / "signatures.json").read_bytes()
 
 
-def test_c11_retroactive_edit_named_p1():
-    r = _verify("C11-retroactive-edit")
-    assert r.failed_property == "P1"
+@pytest.mark.parametrize("name", NONCE_LEAK)
+def test_exported_board_rejected_p1_for_published_nonces(name):
+    r = v.verify(*_files(name))
+    assert r.failed_property == "P1", r.summary()
+    assert "nonce" in r.failure.reason
     assert all(r.properties[p] == "not_checked" for p in ("P2", "P3", "P4", "P5"))
 
 
-def test_b12_malformed_ballot_named_p2():
-    r = _verify("B12-malformed")
-    assert r.failed_property == "P2"
-    assert r.properties["P1"] == "passed"
+def test_c11_retroactive_edit_rejected_at_the_digest_first():
+    r = v.verify(*_files("C11-retroactive-edit"))
+    assert r.failed_property == "P1" and "digest" in r.failure.reason
 
 
-@pytest.mark.xfail(strict=True, reason=BLOCKED)
-def test_clean_board_accepted():
-    assert _verify("clean").accepted
-
-
-@pytest.mark.xfail(strict=True, reason=BLOCKED)
-def test_a9_stuffing_named_p4():
-    assert _verify("A9-stuffing").failed_property == "P4"
-
-
-@pytest.mark.xfail(strict=True, reason=BLOCKED)
-def test_c10_tally_manipulation_named_p5():
-    assert _verify("C10-tally-tamper").failed_property == "P5"
-
-
-@pytest.mark.xfail(strict=True, reason=BLOCKED + "; A8 fails P3 but for the commitment, "
-                                                  "not the redirection")
-def test_a8_redirection_named_p3_for_the_redirection():
-    r = _verify("A8-redirection", tester_selections={6: 0, 7: 0})
-    assert r.failed_property == "P3" and "tester selected" in r.failure.reason
-
-
-def test_strict_mode_rejects_c_schema_as_p1():
-    d = BOARDS / "clean"
-    r = v.verify((d / "board.json").read_bytes(), (d / "signatures.json").read_bytes())
-    assert r.failed_property == "P1" and "seed" in str(r.failure)
+def _without_nonces(monkeypatch, p3):
+    real = v.parse_board
+    monkeypatch.setattr(v, "parse_board", lambda obj: real(strip_nonces(obj)))
+    monkeypatch.setattr(v, "check_cast_as_intended", lambda board, sel: p3)
 
 
 def test_clean_board_passes_p4_and_p5_once_p3_does(monkeypatch):
-    """Everything after P3 already passes on the clean board."""
-    monkeypatch.setattr(v, "check_cast_as_intended", lambda board, sel: "passed")
-    d = BOARDS / "clean"
-    r = v.verify((d / "board.json").read_bytes(), (d / "signatures.json").read_bytes(), compat=True)
+    _without_nonces(monkeypatch, "passed")
+    r = v.verify(*_files("clean"))
     assert r.accepted, r.summary()
 
 
 def test_c1_accepts_with_p3_not_exercised(monkeypatch):
-    monkeypatch.setattr(v, "check_cast_as_intended", lambda board, sel: NOT_EXERCISED)
-    d = BOARDS / "clean"
-    r = v.verify((d / "board.json").read_bytes(), (d / "signatures.json").read_bytes(), compat=True)
+    _without_nonces(monkeypatch, NOT_EXERCISED)
+    r = v.verify(*_files("clean"))
     assert r.accepted
     assert r.properties["P3"] == "not_exercised"
     assert "P3: not exercised" in r.summary()

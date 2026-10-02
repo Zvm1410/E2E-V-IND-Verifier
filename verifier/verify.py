@@ -8,7 +8,6 @@ passed, failed, not_exercised (P3 under configuration C1), or not_checked
 
 from dataclasses import dataclass, field
 
-from verifier.compat import normalise_c_export
 from verifier.group import verify_group_parameters
 from verifier.integrity import check_ballot_count, check_parameters, check_signed_digest
 from verifier.parse import (
@@ -54,7 +53,7 @@ def _parse_property(path):
     return "P1"
 
 
-def _run(result, board_bytes, signature_bytes, compat, tester_selections):
+def _run(result, board_bytes, signature_bytes, tester_selections):
     try:
         obj = load_json(board_bytes)
         signatures = parse_signatures(load_json(signature_bytes))
@@ -65,7 +64,6 @@ def _run(result, board_bytes, signature_bytes, compat, tester_selections):
         raise CheckFailure("P1", exc.path, exc.reason) from exc
     check_signed_digest(board_bytes, obj, keys, signatures)
 
-    obj = normalise_c_export(obj) if compat else obj
     try:
         # P1's own records first, with ballots and spoils held back, so a
         # malformed ballot is attributed to P2 only after P1 has passed.
@@ -96,12 +94,12 @@ def _run(result, board_bytes, signature_bytes, compat, tester_selections):
     result.properties["P5"] = PASSED
 
 
-def verify(board_bytes, signature_bytes, compat=False, tester_selections=None):
+def verify(board_bytes, signature_bytes, tester_selections=None):
     """Verify one exported board. Never raises on a bad board; the outcome
     is in the returned Result."""
     result = Result()
     try:
-        _run(result, board_bytes, signature_bytes, compat, tester_selections)
+        _run(result, board_bytes, signature_bytes, tester_selections)
     except CheckFailure as exc:
         result.failure = exc
         result.properties[exc.prop] = FAILED
@@ -116,10 +114,15 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="Independent verifier (basket D).")
     ap.add_argument("board", type=pathlib.Path)
     ap.add_argument("signatures", type=pathlib.Path)
-    ap.add_argument("--compat", action="store_true",
-                    help="accept C's current field names (see verifier/compat.py)")
+    ap.add_argument("--tester", type=pathlib.Path,
+                    help="tester_selections.json: serial -> candidate index pressed (SPEC 11.1)")
     args = ap.parse_args(argv)
     verify_group_parameters()
-    result = verify(args.board.read_bytes(), args.signatures.read_bytes(), compat=args.compat)
+    tester = None
+    if args.tester:
+        import json
+        tester = {int(k): int(v) for k, v in json.loads(args.tester.read_text()).items()}
+    result = verify(args.board.read_bytes(), args.signatures.read_bytes(),
+                    tester_selections=tester)
     print(result.summary())
     sys.exit(0 if result.accepted else 1)

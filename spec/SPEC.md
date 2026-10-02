@@ -2,7 +2,7 @@
 
 Cryptographic audit framework for end-to-end verifiable voting in air-gapped electronic voting machines.
 
-Specification version `v1`, revision 2. Owners: basket B and basket D jointly.
+Specification version `v1`, revision 3. Owners: basket B and basket D jointly; from revision 3 basket D holds sole editorial authority.
 
 Revision 2 changes no preimage, no field, no field order and no byte encoding. Every domain separation label stays at `-v1` and every hash in the system is unchanged. See the change log in section 20.
 
@@ -446,7 +446,7 @@ Verification of one spoil record:
 
 A spoiled ballot's validity proofs are still checked in the ordinary way. A spoiled ballot is still counted in the poll register.
 
-### 11.1 The tester's comparison (proposed, revision 3)
+### 11.1 The tester's comparison (revision 3)
 
 A machine that redirects a vote and is then challenged has two choices. If it opens a candidate other than the one it encrypted, check 1 fails and the board alone shows it. If it opens truthfully, every record on the board is consistent, and the only evidence is that the opened index differs from what the tester pressed. That comparison is made by the tester at the booth, in the standard Benaloh challenge: the machine displays the opened candidate index, and the tester checks it against their own selection before the ballot is spoiled.
 
@@ -554,26 +554,27 @@ The transcript is the ordered record of everything needed to replay the decrypti
 The board is a single JSON object. Top-level keys, all mandatory:
 
 ```
-election_config      the configuration of section 5.1, verbatim
+election_config      the configuration of section 5.1 without `seed`
 base_hash            64-character lowercase hex of Q
-trustee_setup        pk, commitments, n, t
+trustee_setup        pk, commitments, n, t (no record_type)
 authority_keys       officer and agent Ed25519 public keys, k
 prepoll              randomness commitments and the test schedule commitment
 ballots              array, ordered by ballot_serial ascending
 spoils               array, ordered by ballot_serial ascending
 poll_register        section 12
-schedule_opening     schedule_seed, published at close
-tally_aggregate      per-candidate A_i and B_i as published by C
+schedule_opening     {"schedule_seed": 64-char hex}, published at close
+tally_aggregate      per-candidate A_i and B_i, a convenience never trusted (13.1)
 decryption_transcript section 13.4
 tally_declaration    per-candidate counts
 ```
 
 Signatures live outside this object. See section 15.
 
+`seed` is omitted from the published `election_config` because it drives every draw in a simulated run, including the encryption randomness; publishing it would reveal every vote.
+
 ```json
 {
-  "record_type": "trustee_setup",
-  "public_key": "HEX384",
+  "pk": "HEX384",
   "n": 5,
   "t": 3,
   "commitments": [{"trustee_index": 1, "commitment": "HEX384"}]
@@ -596,6 +597,21 @@ Signatures live outside this object. See section 15.
   "test_schedule_commitment": "64-char hex"
 }
 ```
+
+`commitment` is `K_s` of section 10.1. No other per-serial value is published before the poll; in particular the nonce stays secret until the serial is spoiled.
+
+```json
+{"schedule_seed": "64-char hex"}
+```
+
+```json
+{
+  "record_type": "tally_aggregate",
+  "columns": [{"candidate_index": 0, "alpha": "HEX384", "beta": "HEX384"}]
+}
+```
+
+`columns` has length exactly `m`, ordered by candidate index.
 
 ```json
 {
@@ -646,9 +662,11 @@ There is no timestamp on any ballot record. Timing is a fingerprinting feature f
 ```json
 {
   "record_type": "tally_declaration",
-  "counts": [{"candidate_index": 0, "count": 41}]
+  "totals": [{"candidate_index": 0, "candidate_id": "CAND-A", "votes": 41}]
 }
 ```
+
+`totals` has length exactly `m`, ordered by candidate index, and each `candidate_id` equals the configuration's entry at that index.
 
 ## 15. Canonical serialisation, digest and signatures
 
@@ -761,7 +779,7 @@ These are the only things not frozen. Each has a named owner and a deadline.
 
 1. Discharged. See section 21.
 2. The adversary feature dictionary from basket A. Owner A and D jointly, end of week 1. It does not affect any hash and can be settled after this document is frozen.
-3. The malformed ballot injection hook listed in section 16 has no task number in the execution handbook. It needs one in basket B. Owner B, end of day 2.**
+3. Discharged. The malformed ballot injection hook is task B12 in execution handbook revision 3.
 
 ## 20. Change log
 
@@ -781,11 +799,19 @@ No preimage, field, field order or byte encoding changed. All domain separation 
 
 **6. Soundness note added, section 8.3.** Naming which of the checks carries soundness, because it is the one that can be dropped while every honest-path test continues to pass.
 
-### Revision 3 (proposed by basket D, pending group agreement)
+### Revision 3
 
-No preimage, field, field order or byte encoding changes.
+Applied by basket D, which holds sole editorial authority from this revision. No preimage, field order or byte encoding changes and no label changes. Section 14's field names change, which only affects the canonical bytes the digest already covers.
 
 **1. Tester's comparison, section 11.1.** Section 11 said the tester compares the opened index with their selection but not where that comparison lives. It is made at the booth and never written to the board, since the machine writes the board. The verifier takes the tester's selections as an optional input; simulated runs supply them from the harness. Section 16 P3 updated to match.
+
+**2. Board schema matched to the exported boards, section 14.** `election_config` omits `seed`; `trustee_setup` carries `pk` and no `record_type`; `tally_declaration` carries `totals` of `{candidate_index, candidate_id, votes}`. The shapes of `schedule_opening` and `tally_aggregate`, previously unspecified, are written down.
+
+**4. `nonce_commitment` removed from the pre-poll section.** Revision 2 exports carried a per-serial `nonce_commitment` holding the raw secret nonce of every serial, published before the poll, contrary to section 10.1 and handbook C9. A pre-poll entry carrying a nonce is rejected under P1.
+
+**5. Pre-poll implementation brought to sections 10.1 and 10.2.** The machine's `K_s` omitted the label and Q, `T` was `SHA-256(schedule_seed)`, the schedule was drawn by a different rule, and spoils were topped up with unscheduled serials. Fixed in the machine and integration code; no change to this document's constructions.
+
+**3. Section 19 item 3 discharged.** The malformed ballot hook is B12.
 
 ### Outstanding
 

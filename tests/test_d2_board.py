@@ -1,60 +1,44 @@
-"""D2: the whole-board parser against C's exported clean board.
+"""D2: the whole-board parser against C's exported boards (SPEC 14, rev 3).
 
-C's board differs from SPEC section 14 in four places (listed in
-KNOWN_DEVIATIONS). The verifier follows SPEC.md, so the raw board is
-rejected until either C's export or SPEC.md changes. The second test
-applies exactly those four changes and confirms nothing else differs.
-"""
+The fixtures predate the removal of `nonce_commitment`; see tests/legacy.py."""
 
-import copy
 import pathlib
 
 import pytest
 
 from verifier.hashes import base_hash
+from tests.legacy import strip_nonces
 from verifier.parse import ParseError, load_json, parse_board
 
 BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
-
-KNOWN_DEVIATIONS = """
-election_config has no "seed" (SPEC 14 says the 5.1 config verbatim);
-trustee_setup uses "pk" not "public_key" and has no "record_type";
-prepoll randomness_commitments carry an extra "nonce_commitment";
-tally_declaration uses "totals"/"votes"/"candidate_id" not "counts"/"count".
-"""
+NAMES = ["clean", "A8-redirection", "A9-stuffing", "C10-tally-tamper", "C11-retroactive-edit"]
 
 
-def _clean():
-    return load_json((BOARDS / "clean" / "board.json").read_bytes())
+def _load(name):
+    return load_json((BOARDS / name / "board.json").read_bytes())
 
 
-def _apply_known_deviations(board):
-    b = copy.deepcopy(board)
-    b["election_config"]["seed"] = 0
-    ts = b["trustee_setup"]
-    ts["public_key"] = ts.pop("pk")
-    ts["record_type"] = "trustee_setup"
-    for r in b["prepoll"]["randomness_commitments"]:
-        r.pop("nonce_commitment")
-    totals = b["tally_declaration"].pop("totals")
-    b["tally_declaration"]["counts"] = [
-        {"candidate_index": t["candidate_index"], "count": t["votes"]} for t in totals]
-    return b
-
-
-@pytest.mark.xfail(strict=True, raises=ParseError, reason=KNOWN_DEVIATIONS)
-def test_clean_board_parses_against_spec():
-    parse_board(_clean())
-
-
-def test_clean_board_differs_from_spec_only_in_known_deviations():
-    board = parse_board(_apply_known_deviations(_clean()))
+@pytest.mark.parametrize("name", NAMES)
+def test_exported_boards_parse_strictly_apart_from_the_nonce(name):
+    board = parse_board(strip_nonces(_load(name)))
     assert board.config.m == 6
-    assert len(board.ballots) == board.poll_register.ballots_issued
+    assert board.config.seed is None
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_exported_boards_rejected_for_publishing_nonces(name):
+    with pytest.raises(ParseError, match="publishes a nonce"):
+        parse_board(_load(name))
+
+
+def test_b12_board_rejected_at_the_malformed_ballot():
+    with pytest.raises(ParseError) as exc:
+        parse_board(strip_nonces(_load("B12-malformed")))
+    assert exc.value.path.startswith("ballots[10]")
 
 
 def test_base_hash_recomputed_independently_matches_c():
-    board = parse_board(_apply_known_deviations(_clean()))
+    board = parse_board(strip_nonces(_load("clean")))
     c, ts, ak = board.config, board.trustee_setup, board.authority_keys
     q = base_hash(c.election_id, [x.candidate_id for x in c.candidates], c.n, c.t,
                   ts.public_key, ts.commitments, ak.k, ak.officer, ak.agents)
@@ -64,10 +48,17 @@ def test_base_hash_recomputed_independently_matches_c():
 @pytest.mark.parametrize("mutate", [
     lambda b: b.pop("spoils"),
     lambda b: b.update(extra={}),
+    lambda b: b["election_config"].update(seed=1),
+    lambda b: b["trustee_setup"].update(record_type="trustee_setup"),
+    lambda b: b["prepoll"]["randomness_commitments"][0].update(nonce_commitment="00" * 32),
+    lambda b: b["tally_declaration"]["totals"][0].pop("candidate_id"),
+    lambda b: b["tally_declaration"]["totals"].pop(),
+    lambda b: b["tally_aggregate"]["columns"].reverse(),
+    lambda b: b["schedule_opening"].update(schedule_seed="00"),
     lambda b: b["ballots"][0]["ciphertexts"][0].update(alpha=format(0, "0768x")),
 ])
 def test_board_rejections(mutate):
-    b = _apply_known_deviations(_clean())
+    b = strip_nonces(_load("clean"))
     mutate(b)
     with pytest.raises(ParseError):
         parse_board(b)

@@ -12,10 +12,10 @@ import pathlib
 
 import pytest
 
-from verifier.compat import normalise_c_export
 from verifier.group import P
 from tests.spec10 import rebuild, seed_for
 from verifier.hashes import schedule_commitment
+from tests.legacy import parse_legacy
 from verifier.parse import load_json, parse_board
 from verifier.result import CheckFailure
 from verifier.spoils import NOT_EXERCISED, PASSED, check_cast_as_intended
@@ -31,7 +31,7 @@ the label and Q; and spoils at serials 6, 7 where SPEC 10.2's schedule is empty.
 
 
 def _board(name):
-    return parse_board(normalise_c_export(load_json((BOARDS / name / "board.json").read_bytes())))
+    return parse_legacy(load_json((BOARDS / name / "board.json").read_bytes()))
 
 
 @pytest.fixture(scope="module")

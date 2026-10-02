@@ -185,16 +185,19 @@ class ElectionConfig:
     test_rate_num: int
     test_rate_den: int
     ballots_expected: int
-    seed: int
+    seed: int = None  # present in config/election.json, omitted on the board (SPEC 14)
 
     @property
     def m(self):
         return len(self.candidates)
 
 
-def parse_election_config(obj, path="election_config"):
-    _obj(obj, path, ["election_id", "booth_id", "candidates", "trustees",
-                     "authorities", "test_rate", "ballots_expected", "seed"])
+def parse_election_config(obj, path="election_config", published=True):
+    """SPEC 5.1. `published=True` is the board's copy, which omits `seed`
+    (SPEC 14); `published=False` is config/election.json, which has it."""
+    keys = ["election_id", "booth_id", "candidates", "trustees",
+            "authorities", "test_rate", "ballots_expected"]
+    _obj(obj, path, keys if published else keys + ["seed"])
     election_id = _string(obj["election_id"], path + ".election_id", 64)
     booth_id = _string(obj["booth_id"], path + ".booth_id", 32, ascii_only=True)
     cands = _list(obj["candidates"], path + ".candidates")
@@ -224,7 +227,7 @@ def parse_election_config(obj, path="election_config"):
     return ElectionConfig(
         election_id, booth_id, tuple(candidates), n, t, agents, k, num, den,
         _small_int(obj["ballots_expected"], path + ".ballots_expected"),
-        _small_int(obj["seed"], path + ".seed"),
+        None if published else _small_int(obj["seed"], path + ".seed"),
     )
 
 
@@ -237,8 +240,7 @@ class TrusteeSetup:
 
 
 def parse_trustee_setup(obj, path="trustee_setup"):
-    _obj(obj, path, ["record_type", "public_key", "n", "t", "commitments"])
-    _record_type(obj["record_type"], path, "trustee_setup")
+    _obj(obj, path, ["pk", "n", "t", "commitments"])
     n = _small_int(obj["n"], path + ".n", 1)
     t = _small_int(obj["t"], path + ".t", 1)
     if t > n:
@@ -249,7 +251,7 @@ def parse_trustee_setup(obj, path="trustee_setup"):
         ep = f"{path}.commitments[{pos}]"
         _obj(e, ep, ["trustee_index", "commitment"])
         commitments.append(element(e["commitment"], ep + ".commitment"))
-    return TrusteeSetup(element(obj["public_key"], path + ".public_key"), n, t, tuple(commitments))
+    return TrusteeSetup(element(obj["pk"], path + ".pk"), n, t, tuple(commitments))
 
 
 @dataclass(frozen=True)
@@ -285,6 +287,10 @@ def parse_prepoll(obj, path="prepoll"):
     commits = []
     for pos, e in enumerate(_list(obj["randomness_commitments"], path + ".randomness_commitments")):
         ep = f"{path}.randomness_commitments[{pos}]"
+        if isinstance(e, dict) and "nonce_commitment" in e:
+            raise ParseError(ep + ".nonce_commitment",
+                             "pre-poll entry publishes a nonce; it must stay secret until "
+                             "the serial is spoiled (SPEC 10.1, handbook C9)")
         _obj(e, ep, ["ballot_serial", "commitment"])
         commits.append((_small_int(e["ballot_serial"], ep + ".ballot_serial"),
                         hash32(e["commitment"], ep + ".commitment")))
@@ -400,15 +406,17 @@ def parse_poll_register(obj, path="poll_register"):
 
 
 def parse_tally_declaration(obj, m, path="tally_declaration"):
-    """Returns the declared counts as a tuple indexed by candidate."""
-    _obj(obj, path, ["record_type", "counts"])
+    """Returns (counts, candidate_ids), each a tuple indexed by candidate.
+    The ids are compared with the configuration in P5, not here."""
+    _obj(obj, path, ["record_type", "totals"])
     _record_type(obj["record_type"], path, "tally_declaration")
-    counts = []
-    for pos, e in enumerate(_indexed(obj["counts"], path + ".counts", "candidate_index", 0, m)):
-        ep = f"{path}.counts[{pos}]"
-        _obj(e, ep, ["candidate_index", "count"])
-        counts.append(_small_int(e["count"], ep + ".count"))
-    return tuple(counts)
+    counts, ids = [], []
+    for pos, e in enumerate(_indexed(obj["totals"], path + ".totals", "candidate_index", 0, m)):
+        ep = f"{path}.totals[{pos}]"
+        _obj(e, ep, ["candidate_index", "candidate_id", "votes"])
+        counts.append(_small_int(e["votes"], ep + ".votes"))
+        ids.append(_string(e["candidate_id"], ep + ".candidate_id", 64))
+    return tuple(counts), tuple(ids)
 
 
 @dataclass(frozen=True)
@@ -476,14 +484,13 @@ def parse_signatures(obj, path="signatures"):
 
 
 def parse_schedule_opening(obj, path="schedule_opening"):
-    """Shape not given in SPEC 14; taken from C's exported board."""
+    """SPEC 14."""
     _obj(obj, path, ["schedule_seed"])
     return hash32(obj["schedule_seed"], path + ".schedule_seed")
 
 
 def parse_tally_aggregate(obj, m, path="tally_aggregate"):
-    """Shape not given in SPEC 14; taken from C's exported board.
-    Returns (A_i, B_i) per candidate. Never trusted, only compared (SPEC 13.1)."""
+    """SPEC 14. Returns (A_i, B_i) per candidate. Never trusted, only compared (SPEC 13.1)."""
     _obj(obj, path, ["record_type", "columns"])
     _record_type(obj["record_type"], path, "tally_aggregate")
     cols = []
@@ -514,7 +521,8 @@ class Board:
     schedule_seed: bytes
     tally_aggregate: tuple
     decryption_transcript: DecryptionTranscript
-    tally_declaration: tuple
+    tally_declaration: tuple  # declared counts, indexed by candidate
+    tally_candidate_ids: tuple
 
 
 def parse_board(obj):
@@ -522,6 +530,7 @@ def parse_board(obj):
     _obj(obj, "board", BOARD_KEYS)
     config = parse_election_config(obj["election_config"])
     m = config.m
+    counts, ids = parse_tally_declaration(obj["tally_declaration"], m)
     return Board(
         config=config,
         base_hash=hash32(obj["base_hash"], "base_hash"),
@@ -537,5 +546,6 @@ def parse_board(obj):
         tally_aggregate=parse_tally_aggregate(obj["tally_aggregate"], m),
         decryption_transcript=parse_decryption_transcript(
             obj["decryption_transcript"], m, config.n, config.t),
-        tally_declaration=parse_tally_declaration(obj["tally_declaration"], m),
+        tally_declaration=counts,
+        tally_candidate_ids=ids,
     )

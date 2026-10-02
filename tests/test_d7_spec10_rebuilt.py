@@ -17,6 +17,7 @@ import pathlib
 import pytest
 
 import verifier.verify as v
+from tests.legacy import strip_nonces
 from tests.spec10 import rebuild
 
 BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
@@ -26,7 +27,7 @@ _real_parse_board = v.parse_board
 
 
 def _parse_and_rebuild(obj):
-    board = _real_parse_board(obj)
+    board = _real_parse_board(strip_nonces(obj))
     return rebuild(board) if board.ballots else board  # P1's ballot-free pre-parse untouched
 
 
@@ -42,7 +43,7 @@ def _verify(name, tester=None):
         try:
             _cache[key] = v.verify((d / "board.json").read_bytes(),
                                    (d / "signatures.json").read_bytes(),
-                                   compat=True, tester_selections=tester)
+                                   tester_selections=tester)
         finally:
             mp.undo()
     return _cache[key]

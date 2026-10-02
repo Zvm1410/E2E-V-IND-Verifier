@@ -7,8 +7,8 @@ import pathlib
 
 import pytest
 
-from verifier.compat import normalise_c_export
 from verifier.integrity import check_ballot_count, check_board_integrity
+from tests.legacy import parse_legacy
 from verifier.parse import load_json, parse_board, parse_signatures
 from verifier.result import CheckFailure
 
@@ -20,7 +20,7 @@ def _load(name):
     raw = (d / "board.json").read_bytes()
     obj = load_json(raw)
     sig = parse_signatures(load_json((d / "signatures.json").read_bytes()))
-    return raw, obj, parse_board(normalise_c_export(obj)), sig
+    return raw, obj, parse_legacy(obj), sig
 
 
 @pytest.fixture(scope="module")

@@ -187,7 +187,7 @@ def test_ballot_rejections(name, mutate):
 
 
 def test_config_from_base_hash_vector_parses():
-    cfg = parse_election_config(load("base_hash.json")["config"])
+    cfg = parse_election_config(load("base_hash.json")["config"], published=False)
     assert cfg.m == 6 and cfg.n == 5 and cfg.t == 3 and cfg.k == 2
     assert (cfg.test_rate_num, cfg.test_rate_den) == (1, 20)
 
@@ -196,7 +196,13 @@ def test_config_rejects_decimal_rate():
     cfg = copy.deepcopy(load("base_hash.json")["config"])
     cfg["test_rate"] = 0.05
     with pytest.raises(ParseError):
-        parse_election_config(cfg)
+        parse_election_config(cfg, published=False)
+
+
+def test_published_config_must_omit_seed():
+    """SPEC 14: the seed drives the encryption randomness in a simulated run."""
+    with pytest.raises(ParseError, match="seed"):
+        parse_election_config(load("base_hash.json")["config"])
 
 
 # -------------------------------------------------- decryption transcript

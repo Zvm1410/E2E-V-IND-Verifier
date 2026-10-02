@@ -11,9 +11,9 @@ from types import SimpleNamespace
 import pytest
 
 from tests.vectors import load
-from verifier.compat import normalise_c_export
 from verifier.group import G, P
 from verifier.hashes import partial_preimage
+from tests.legacy import parse_legacy
 from verifier.parse import SumProof, load_json, parse_board
 from verifier.result import CheckFailure
 from verifier.tally import (
@@ -90,8 +90,7 @@ def test_bsgs_agrees_with_brute_force():
 
 
 def _board(name):
-    return parse_board(normalise_c_export(
-        load_json((BOARDS / name / "board.json").read_bytes())))
+    return parse_legacy(load_json((BOARDS / name / "board.json").read_bytes()))
 
 
 @pytest.fixture(scope="module")
@@ -148,3 +147,11 @@ def test_partial_from_wrong_share_rejected(clean):
         tr, partials=(forged, *tr.partials[1:])))
     with pytest.raises(CheckFailure, match="partials"):
         check_tally(bad)
+
+
+def test_declared_candidate_id_must_match_config(clean):
+    ids = list(clean.tally_candidate_ids)
+    ids[0], ids[1] = ids[1], ids[0]
+    with pytest.raises(CheckFailure, match="candidate_id") as exc:
+        check_tally(dataclasses.replace(clean, tally_candidate_ids=tuple(ids)))
+    assert exc.value.prop == "P5"

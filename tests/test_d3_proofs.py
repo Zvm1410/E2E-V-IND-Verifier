@@ -11,9 +11,9 @@ import random
 
 import pytest
 
-from verifier.compat import normalise_c_export
 from verifier.encoding import inv
 from verifier.group import G, P, Q
+from tests.legacy import parse_legacy
 from verifier.parse import load_json, parse_board
 from verifier.proofs import (
     ProofFailure,
@@ -28,7 +28,7 @@ BOARDS = pathlib.Path(__file__).resolve().parent / "fixtures" / "boards"
 @pytest.fixture(scope="module")
 def board():
     raw = load_json((BOARDS / "clean" / "board.json").read_bytes())
-    return parse_board(normalise_c_export(raw))
+    return parse_legacy(raw)
 
 
 def _check(board, ballot, i, proof=None, serial=None, booth=None, index=None, ct=None):

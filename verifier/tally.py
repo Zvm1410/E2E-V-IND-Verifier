@@ -77,6 +77,11 @@ def check_tally(board):
             raise CheckFailure("P5", f"tally_aggregate.columns[{i}]",
                                "published aggregate does not recompute from the ciphertexts")
 
+    expected_ids = tuple(c.candidate_id for c in board.config.candidates)
+    if board.tally_candidate_ids != expected_ids:
+        raise CheckFailure("P5", "tally_declaration.totals",
+                           "candidate_id does not match the configuration at that index")
+
     tr = board.decryption_transcript
     for j in tr.subset:
         if tr.lagrange_coefficients[j] != lagrange_coefficient(j, tr.subset):
