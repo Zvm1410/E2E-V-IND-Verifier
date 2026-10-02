@@ -1,0 +1,24 @@
+{
+  "files": [
+    {
+      "name": "README.md",
+      "sha256": "4cb391f516a64f5d7a6ed250f61e42b06ad99924a6674eb2fa1981fb3b7ebcdd",
+      "size_bytes": 2074
+    },
+    {
+      "name": "board.json",
+      "sha256": "dfc557f62e647c409d110a39ad3a01a7b9f59db64e8a9e3d3b8952184aff701d",
+      "size_bytes": 1137951
+    },
+    {
+      "name": "election.json",
+      "sha256": "fc86420d90c27ac4673aaa976e4254bc995602fce097de6e72059e6b597da7bf",
+      "size_bytes": 523
+    },
+    {
+      "name": "signatures.json",
+      "sha256": "f9a239e0f8946700caf5e9365f07caaa3e4b623f46770044dfcf51c9349add73",
+      "size_bytes": 1101
+    }
+  ]
+}

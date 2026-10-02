@@ -473,3 +473,69 @@ def parse_signatures(obj, path="signatures"):
     return Signatures(hash32(obj["digest"], path + ".digest"),
                       signature64(obj["officer_signature"], path + ".officer_signature"),
                       tuple(sigs))
+
+
+def parse_schedule_opening(obj, path="schedule_opening"):
+    """Shape not given in SPEC 14; taken from C's exported board."""
+    _obj(obj, path, ["schedule_seed"])
+    return hash32(obj["schedule_seed"], path + ".schedule_seed")
+
+
+def parse_tally_aggregate(obj, m, path="tally_aggregate"):
+    """Shape not given in SPEC 14; taken from C's exported board.
+    Returns (A_i, B_i) per candidate. Never trusted, only compared (SPEC 13.1)."""
+    _obj(obj, path, ["record_type", "columns"])
+    _record_type(obj["record_type"], path, "tally_aggregate")
+    cols = []
+    for pos, e in enumerate(_indexed(obj["columns"], path + ".columns", "candidate_index", 0, m)):
+        ep = f"{path}.columns[{pos}]"
+        _obj(e, ep, ["candidate_index", "alpha", "beta"])
+        cols.append((element(e["alpha"], ep + ".alpha"), element(e["beta"], ep + ".beta")))
+    return tuple(cols)
+
+
+BOARD_KEYS = [
+    "election_config", "base_hash", "trustee_setup", "authority_keys", "prepoll",
+    "ballots", "spoils", "poll_register", "schedule_opening", "tally_aggregate",
+    "decryption_transcript", "tally_declaration",
+]
+
+
+@dataclass(frozen=True)
+class Board:
+    config: ElectionConfig
+    base_hash: bytes
+    trustee_setup: TrusteeSetup
+    authority_keys: AuthorityKeys
+    prepoll: Prepoll
+    ballots: tuple
+    spoils: tuple
+    poll_register: PollRegister
+    schedule_seed: bytes
+    tally_aggregate: tuple
+    decryption_transcript: DecryptionTranscript
+    tally_declaration: tuple
+
+
+def parse_board(obj):
+    """SPEC 14: the whole board, every record parsed strictly."""
+    _obj(obj, "board", BOARD_KEYS)
+    config = parse_election_config(obj["election_config"])
+    m = config.m
+    return Board(
+        config=config,
+        base_hash=hash32(obj["base_hash"], "base_hash"),
+        trustee_setup=parse_trustee_setup(obj["trustee_setup"]),
+        authority_keys=parse_authority_keys(obj["authority_keys"]),
+        prepoll=parse_prepoll(obj["prepoll"]),
+        ballots=tuple(parse_ballot(b, m, f"ballots[{i}]")
+                      for i, b in enumerate(_list(obj["ballots"], "ballots"))),
+        spoils=tuple(parse_spoil(s, m, f"spoils[{i}]")
+                     for i, s in enumerate(_list(obj["spoils"], "spoils"))),
+        poll_register=parse_poll_register(obj["poll_register"]),
+        schedule_seed=parse_schedule_opening(obj["schedule_opening"]),
+        tally_aggregate=parse_tally_aggregate(obj["tally_aggregate"], m),
+        decryption_transcript=parse_decryption_transcript(
+            obj["decryption_transcript"], m, config.n, config.t),
+        tally_declaration=parse_tally_declaration(obj["tally_declaration"], m),
+    )

@@ -21,7 +21,7 @@ pytest
 
 | Task | What | Status |
 |---|---|---|
-| D2 | Arithmetic, encoding, subgroup and range checks, strict parser | group, encoding, base hash and per-record parsers done; full-board parser waits on `board.json` |
+| D2 | Arithmetic, encoding, subgroup and range checks, strict parser | done against SPEC; C's clean board differs from SPEC 14 in four fields (see tests/test_d2_board.py); waits on ballot.json and negative.json vectors |
 | D3 | Validity proof verification (SPEC 8.3) | |
 | D3b | Sum-to-one verification (SPEC 9.3) | |
 | D4 | Aggregate and decryption transcript (SPEC 13) | |
