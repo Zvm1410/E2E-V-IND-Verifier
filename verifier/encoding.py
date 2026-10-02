@@ -1,6 +1,7 @@
 """Byte encodings, SPEC section 3, and the membership and range checks of 2.1."""
 
 import re
+from functools import lru_cache
 
 from verifier.group import G, P, Q, WIDTH
 
@@ -60,7 +61,14 @@ def in_group(x):
     The upper bound is load-bearing: pow() reduces mod p first, so without it
     x + p would pass. The lower bound is 0, not 1; the identity is a member.
     """
-    return isinstance(x, int) and not isinstance(x, bool) and 0 < x < P and pow(x, Q, P) == 1
+    return isinstance(x, int) and not isinstance(x, bool) and 0 < x < P and _legendre_is_one(x)
+
+
+@lru_cache(maxsize=65536)
+def _legendre_is_one(x):
+    # Cached: the parser and the proof checks both test the same elements,
+    # and each exponentiation costs a full 3072-bit pow.
+    return pow(x, Q, P) == 1
 
 
 def in_exponent_range(x):

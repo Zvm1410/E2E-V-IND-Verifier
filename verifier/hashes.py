@@ -3,7 +3,7 @@ so a mismatch can be located byte by byte against the test vectors."""
 
 import hashlib
 
-from verifier.encoding import b2i, i2b, label, s64, u64
+from verifier.encoding import b2i, i2b, label, s32, s64, u64
 from verifier.group import G, P, Q
 
 
@@ -42,3 +42,25 @@ def base_hash_preimage(election_id, candidate_ids, n, t, pk, commitments,
 def base_hash(*args, **kwargs):
     """Q as 32 raw bytes."""
     return hashlib.sha256(base_hash_preimage(*args, **kwargs)).digest()
+
+
+def validity_preimage(q_hash, booth_id, serial, candidate_index, pk, alpha, beta,
+                      a0, b0, a1, b1):
+    """SPEC 8.2. Exactly 2800 bytes."""
+    preimage = b"".join([
+        label("EVOTE-VALIDITY-v1"), q_hash, s32(booth_id), u64(serial),
+        u64(candidate_index), i2b(pk), i2b(alpha), i2b(beta),
+        i2b(a0), i2b(b0), i2b(a1), i2b(b1),
+    ])
+    assert len(preimage) == 2800, len(preimage)
+    return preimage
+
+
+def sumone_preimage(q_hash, booth_id, serial, pk, big_a, b_over_g, a, b):
+    """SPEC 9.2. Exactly 2408 bytes."""
+    preimage = b"".join([
+        label("EVOTE-SUMONE-v1"), q_hash, s32(booth_id), u64(serial),
+        i2b(G), i2b(pk), i2b(big_a), i2b(b_over_g), i2b(a), i2b(b),
+    ])
+    assert len(preimage) == 2408, len(preimage)
+    return preimage
