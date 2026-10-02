@@ -1,2 +1,3 @@
 cryptography
 pytest
+PyQt6  # the kiosk GUI (app/) only; the verifier, harness and run_election.py do not need it

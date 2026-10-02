@@ -8,7 +8,7 @@ What is modelled, and what is not
 ---------------------------------
 The schedule is SPEC 10.2's per-serial draw, computed by the verifier's own
 `is_scheduled` from a seed. The adversaries are basket A's classes, imported
-unmodified from vendor/a10. The machine sees, for each ballot, the features
+unmodified from app/services/adversary.py. The machine sees, for each ballot, the features
 of A's dictionary (elapsed time since poll open, ballot index, time from
 selection to confirmation, input device) before it encrypts, decides by its
 adversary's rule which ballots are safe to manipulate, and redirects k of
@@ -44,7 +44,7 @@ from fractions import Fraction
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-for extra in (ROOT, ROOT / "vendor" / "a10", ROOT / "vendor" / "b10"):
+for extra in (ROOT, ROOT / "baseline"):
     if str(extra) not in sys.path:
         sys.path.insert(0, str(extra))
 

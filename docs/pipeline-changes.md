@@ -1,12 +1,9 @@
-# Pipeline patches (prover side)
+# Prover-side fixes (SPEC revision 3)
 
-Fixes to the group repository's machine and integration code so the boards
-it produces satisfy SPEC revision 3. Every file here mirrors its path in
-the group repository. None is under `crypto/` or `tally/`; the verifier in
-`../verifier/` never imports any of it.
-
-The first commit touching this directory holds the files exactly as
-received, so `git log -p pipeline/` shows every change.
+Fixes to the machine and integration code (baskets A and C) so the boards
+it produces satisfy SPEC revision 3. None touches `crypto/` or `tally/`.
+These files first entered the repository under `pipeline/` exactly as
+received (commit b2feb5e), so `git log -p --follow <file>` shows every change.
 
 ## What changed and why
 
@@ -26,10 +23,9 @@ received, so `git log -p pipeline/` shows every change.
 
 ## Regenerating the bundles
 
-From the root of the group repository, with its `crypto/` and `tally/` in place:
+From the project root:
 
 ```
-cp -r /path/to/E2E-V-IND-Verifier/pipeline/* .
 ./make_bundles.sh          # BALLOTS=60 by default
 ```
 

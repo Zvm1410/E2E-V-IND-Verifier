@@ -21,7 +21,7 @@ from fractions import Fraction
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-for extra in (ROOT / "vendor" / "b10",):
+for extra in (ROOT / "baseline",):
     if str(extra) not in sys.path:
         sys.path.insert(0, str(extra))
 

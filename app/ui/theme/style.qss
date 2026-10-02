@@ -1,0 +1,164 @@
+QWidget {
+    background: #F4F8FA;
+    color: #000000;
+    font-family: "Segoe UI", "DejaVu Sans", sans-serif;
+}
+
+QLabel {
+    color: #000000;
+}
+
+QLabel[class="title"] {
+    font-size: 56px;
+    font-weight: 700;
+}
+
+QLabel[class="subtitle"] {
+    font-size: 28px;
+    color: #5A6B75;
+}
+
+QLabel[class="section"] {
+    font-size: 34px;
+    font-weight: 700;
+}
+
+QLabel[class="hint"] {
+    font-size: 22px;
+    color: #5A6B75;
+}
+
+QLabel[class="receipt-code"] {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #00A651;
+}
+
+QPushButton {
+    background: #00A651;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 18px;
+    font-size: 28px;
+    font-weight: 700;
+    padding: 24px 32px;
+    min-height: 72px;
+}
+
+QPushButton:hover {
+    background: #00914a;
+}
+
+QPushButton:pressed {
+    background: #007a3f;
+}
+
+QPushButton[class="secondary"] {
+    background: #8EBBD0;
+    color: #000000;
+}
+
+QPushButton[class="secondary"]:hover {
+    background: #7aa8bf;
+}
+
+QPushButton[class="danger"] {
+    background: #F58220;
+    color: #FFFFFF;
+}
+
+QPushButton[class="danger"]:hover {
+    background: #d96f15;
+}
+
+QPushButton[class="ghost"] {
+    background: transparent;
+    color: #000000;
+    border: 2px solid #8EBBD0;
+}
+
+QScrollArea {
+    border: none;
+    background: transparent;
+}
+
+QFrame[class="card"] {
+    background: #FFFFFF;
+    border: 2px solid #C5D9E4;
+    border-radius: 20px;
+}
+
+QFrame[class="stat-card"] {
+    background: #FFFFFF;
+    border: 2px solid #8EBBD0;
+    border-radius: 18px;
+}
+
+QFrame[class="panel"] {
+    background: #FFFFFF;
+    border: 2px solid #C5D9E4;
+    border-radius: 20px;
+}
+
+QFrame#statusBar {
+    background: transparent;
+    border: none;
+}
+
+QFrame#metricCell {
+    background: #FFFFFF;
+    border: 2px solid #8EBBD0;
+    border-radius: 18px;
+}
+
+QProgressBar {
+    border: none;
+    border-radius: 10px;
+    background: #E6EEF3;
+    min-height: 18px;
+    text-align: center;
+    color: #000000;
+    font-size: 16px;
+}
+
+QProgressBar::chunk {
+    border-radius: 10px;
+    background: #F58220;
+}
+
+QComboBox, QSpinBox {
+    background: #FFFFFF;
+    border: 2px solid #8EBBD0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 22px;
+    min-height: 48px;
+}
+
+QCheckBox {
+    font-size: 22px;
+    spacing: 12px;
+}
+
+QCheckBox::indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 2px solid #8EBBD0;
+    background: #FFFFFF;
+}
+
+QCheckBox::indicator:checked {
+    background: #00A651;
+    border-color: #00A651;
+}
+
+QTextEdit {
+    background: #FFFFFF;
+    border: 2px solid #C5D9E4;
+    border-radius: 16px;
+    padding: 16px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 18px;
+}

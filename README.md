@@ -1,90 +1,115 @@
 # E2E-V-IND-Verifier
 
-Basket D of the end-to-end verifiable voting audit framework: the independent
-verifier (`verifier/`), the evaluation harness (`harness/`) and the result
-tables (`results/`).
+Cryptographic audit framework for end-to-end verifiable voting on air-gapped
+electronic voting machines, with an independently written verifier and the
+evaluation behind the paper.
 
-The verifier is written from `spec/SPEC.md` and `spec/vectors/` only. It never
-imports from, and is never written by reading, `crypto/` or `tally/`
-(handbook section 1.2, enforced by `tests/test_independence.py`).
+A vote is a vector of exponential-ElGamal ciphertexts over the 3072-bit RFC
+3526 group, one per candidate, each with a Cramer-Damgard-Schoenmakers proof
+that it encrypts 0 or 1 and a Chaum-Pedersen proof that the vector sums to one.
+The machine commits to every ballot's randomness and to a test schedule
+before the poll opens; scheduled ballots are challenged and opened, which is
+what catches a machine that redirects votes. Trustees decrypt only the
+per-candidate aggregates, with proofs. Everything is published on a signed
+bulletin board that a verifier checks property by property.
+
+The normative description is [`spec/SPEC.md`](spec/SPEC.md) (revision 3).
+
+## Layout
+
+| Path | What | Basket |
+|---|---|---|
+| `spec/` | SPEC.md and test vectors | B and D |
+| `app/` | Kiosk GUI, election loader, ballot service, attack hooks A8/A9, fingerprinting adversaries A10 | A |
+| `crypto/` | Group, encoding, ElGamal, validity and sum proofs, `encrypt_and_prove`, base hash | B |
+| `baseline/` | C0 paper-audit baseline (B10) | B |
+| `tally/` | Trusted dealer, Shamir sharing, threshold decryption, decryption proofs | C |
+| `board/` | Bulletin board, digest, Ed25519 multisignature, export checks | C |
+| `run_election.py` | One election end to end, with the attack flags | C |
+| `bundle_for_basket_d.py`, `make_bundles.sh` | Package and regenerate the evaluation boards | C, D |
+| `verifier/` | Independent verifier, P1 to P5 with attribution | D |
+| `harness/` | Simulated elections (D8), sweep (D9), full-crypto runs (D10), tables (D11), Pi benchmark | D |
+| `results/` | Sweep output and `tables.md` | D |
+| `tests/` | Verifier and harness tests; real boards in `tests/fixtures/` | D |
+| `scripts/` | Basket A's attack-hook sanity scripts | A |
+| `docs/pipeline-changes.md` | Fixes made to A's and C's code for SPEC revision 3 | D |
+
+## The independence constraint
+
+`verifier/` never imports from, and was not written from, `crypto/` or
+`tally/`. It was built from SPEC.md, the test vectors and exported boards, and
+frozen before the prover code entered this repository. See
+[`INDEPENDENCE.md`](INDEPENDENCE.md) for the commit and the SHA-256 of every
+verifier file at that point; `tests/test_independence.py` enforces the import
+rule on every test run.
 
 ## Setup
 
 ```
-python3 -m venv .venv          # Python 3.11 or later
+python3 -m venv .venv           # Python 3.11 or later
 source .venv/bin/activate
 pip install -r requirements.txt
-pytest
 ```
 
-## Running it
+## Run an election and verify it
 
 ```
-python -m verifier board.json signatures.json [--tester tester_selections.json]
+python run_election.py --ballots 40 --out-dir out
+python -m verifier out/board.json out/signatures.json --tester out/tester_selections.json
 ```
 
-The full test suite takes about 15 minutes, mostly 3072-bit exponentiations
-in the end-to-end board runs (`tests/test_d7_attribution.py`).
+`run_election.py` takes `--redirect-to N` (A8), `--stuff N` (A9), `--malform`
+(B12), `--tamper-tally` (C10), `--retroactive-edit` (C11), and
+`--config config/election_c1.json` for configuration C1. The verifier prints
+`Accept`, or `Reject` with the failing property and record, and the state of
+each of P1 to P5 (passed, failed, not exercised, not checked).
 
-## Other directories
+`./make_bundles.sh` regenerates all seven evaluation bundles.
 
-- `pipeline/`: fixes to the group repository's machine and integration code
-  (not `crypto/` or `tally/`) so its boards meet SPEC revision 3, and
-  `make_bundles.sh` to regenerate all seven bundles. See `pipeline/README.md`.
-- `harness/`: the evaluation. `sim.py` (D8), `sweep.py` (D9), `full_runs.py`
-  (D10, the full-crypto check of the fast model, and attribution on real
-  bundles), `tables.py` (D11), `bench.py` (A11 on the Pi), `stats.py` (Wilson).
-- `results/`: sweep output and `tables.md`.
-- `vendor/b10/`, `vendor/a10/`: B's C0 baseline and A's adversary classes, unmodified.
+## Evaluation
 
-## Progress
+```
+python -m harness.sweep                                   # D9: 234 cells x 2000 simulated elections
+python -m harness.full_runs --clean 30 --redirect 30      # D10 and the fast-model check, real crypto
+python -m harness.full_runs --attribution .               # D7 attribution on the seven bundles
+python -m harness.tables                                  # D11: results/tables.md
+python -m harness.bench --ballots 500                     # A11 on the Raspberry Pi
+```
 
-| Task | What | Status |
-|---|---|---|
-| D2 | Arithmetic, encoding, subgroup and range checks, strict parser | done; every exported board parses strictly under SPEC revision 3 |
-| D3 | Validity proof verification (SPEC 8.3) | done; every proof on the clean, A8 and A9 boards verifies |
-| D3b | Sum-to-one verification (SPEC 9.3) | done |
-| D4 | Aggregate and decryption transcript (SPEC 13) | done; partial-proof preimages byte-exact against decryption.json; C10 rejected as P5 |
-| D5 | Digest, signatures, register cross-check (SPEC 12, 15) | done; C11 rejected as P1, A9 as P4 |
-| D6 | Spoil records and test schedule (SPEC 10, 11) | done against SPEC; C's boards fail (pre-poll commitments, see below) |
-| D7 | Property attribution P1 to P5 (SPEC 16) | done; all six attributions correct with the pre-poll section corrected; awaiting regenerated boards |
-| D8 | Harness: one simulated election (`harness/sim.py`) | done; SPEC 10.2 schedule, A's adversaries unmodified (vendor/a10) |
-| D9 | Repeated-election sweep with Wilson intervals (`harness/sweep.py`) | done; 234 cells x 2000 runs; both sanity checks pass |
-| D10 | Clean-mode false rejection (`harness/full_runs.py --clean`) | script ready; runs on the machine with crypto/ |
-| D11 | Result tables (`harness/tables.py` -> `results/tables.md`) | done for simulated results; full-crypto and Pi cells fill in when run |
+`harness/sim.py` explains what the fast model simulates and why the full
+runs are the check on it.
 
-## Findings, and what was done about them
+## Tests
 
-1. **Board schema.** SPEC 14 revised to the exported field names (SPEC
-   revision 3, item 2); the parser is strict against it.
-2. **Pre-poll commitments.** The machine computed `K_s` without the label
-   and Q, set `T = SHA-256(seed)`, drew the schedule by a different rule,
-   and topped spoils up with unscheduled serials, so P3 failed on every
-   board. Fixed in `pipeline/`; boards to be regenerated.
-3. **Published nonces.** Every exported board carried each serial's secret
-   nonce in `prepoll` as `nonce_commitment` (handbook C9). Removed in
-   `pipeline/`; the verifier rejects any pre-poll nonce under P1, and the
-   exporter now scans values, not just key names.
-4. **Tester record.** SPEC 11.1: the tester compares at the booth; the
-   harness, or `--tester`, supplies the selections. Without them a
-   redirection opened truthfully is not detectable from the board.
-5. **Benchmark stub.** The GUI's A11 benchmark timed SHA-256 and invented
-   proof times and memory. Replaced for the paper by `harness/bench.py`.
+```
+pytest                 # about 15 minutes, mostly 3072-bit exponentiations
+```
 
-### Attribution on the revision 2 boards with the pre-poll section corrected
+## Status
 
-`tests/test_d7_spec10_rebuilt.py` keeps every real record on the exported
-boards, drops the leaked nonces and rebuilds only K_s, the schedule seed
-and T to SPEC 10:
+| Task | State |
+|---|---|
+| Verifier D2 to D7 | Done. Every proof, decryption proof and signature on the exported boards verifies; attribution correct on all six boards with the pre-poll section corrected. |
+| SPEC revision 3 | Board schema, removal of the published nonces, tester's comparison (11.1). |
+| Prover fixes | Pre-poll commitments and schedule to SPEC 10, nonce leak, tester record, value-based export scan. See `docs/pipeline-changes.md`. |
+| D8, D9, D11 | Done for simulated results; both D9 sanity checks pass. |
+| D10, full-crypto check, attribution on regenerated boards | Scripts ready; run with `crypto/` and `tally/` present. |
+| A11 benchmark | `harness/bench.py`; the GUI's admin-panel benchmark (`app/services/benchmark.py`) is a stub and is not used for the paper. |
 
-| Board | Expected | Verifier |
-|---|---|---|
-| clean | Accept | Accept, P1 to P5 passed |
-| A8 redirection | P3 | P3, tester selected 4, machine opened 5 |
-| A9 stuffing | P4 | P4, with P3 passed |
-| B12 malformed | P2 | P2 |
-| C10 tally manipulation | P5 | P5, with P1 to P4 passed |
-| C11 retroactive edit | P1 | P1 |
+## Findings recorded during the build
 
-`tests/test_e2e_regenerated.py` runs the same table, plus C1, on the
-regenerated boards once they are in `tests/fixtures/boards-r3/`.
+1. The exported board schema differed from SPEC 14; SPEC revised to match.
+2. The machine's pre-poll commitments and test schedule did not follow
+   SPEC 10, and spoils were topped up with unscheduled serials, so P3 failed
+   on every board. Fixed in `app/services/ballot_service.py` and
+   `run_election.py`.
+3. Every revision 2 board published each serial's secret nonce before the
+   poll. Removed; the verifier rejects it under P1, and the exporter now
+   scans values as well as key names.
+4. A redirecting machine that opens a challenged ballot truthfully is
+   consistent on the board; only the tester's own record catches it (SPEC
+   11.1). The verifier takes that record with `--tester`.
+5. At equal sampling rates, test ballots and random-sample paper audits
+   detect blind redirection at the same rate (Table 1). The advantage over
+   current practice is against cluster audits of whole booths (Table 4),
+   plus attribution and independence from the paper trail.

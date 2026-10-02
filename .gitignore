@@ -2,3 +2,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+out/
+out-*/
+for-basket-d*/
+for-basket-d*.tar.gz
+.DS_Store

@@ -14,11 +14,10 @@ and reports distributions (min, p50, p90, p99, max, mean), not averages,
 because a long tail is a finding (handbook A11). Peak resident memory is
 read from the OS once at the end, not simulated.
 
-Run from anywhere, pointing --repo at the group repository root (the one
-holding crypto/). Only three prover entry points are called, by the
-signatures run_election.py uses; nothing in crypto/ is read.
+Run from the project root. Only three prover entry points are called, by
+the signatures run_election.py uses.
 
-    python harness/bench.py --repo ~/evm --ballots 500 --m 2,4,6,8 [--verify]
+    python -m harness.bench --ballots 500 --m 2,4,6,8 [--verify]
 
 A full run takes hours on a Pi; progress and an estimate print every 25 ballots.
 
@@ -166,7 +165,7 @@ def summarise(rows, m_values, args):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--repo", required=True, help="group repository root (holds crypto/)")
+    ap.add_argument("--repo", default=str(HERE), help="project root (holds crypto/)")
     ap.add_argument("--ballots", type=int, default=500, help="timed ballots per m (>= 500)")
     ap.add_argument("--m", default="2,4,6,8", help="comma-separated candidate counts")
     ap.add_argument("--warmup", type=int, default=5, help="untimed ballots per m")

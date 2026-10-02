@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Regenerate every bundle the verifier is evaluated on.
-# Run from the root of the group repository (the one with crypto/ and tally/),
-# after copying this pipeline/ directory's files over it.
+# Run from the project root.
 set -euo pipefail
 
 BALLOTS="${BALLOTS:-60}"

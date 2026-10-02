@@ -1,7 +1,7 @@
 """Full-crypto elections through the real prover and this verifier.
 
-Runs on the machine that holds the group repository (crypto/ and tally/),
-with the pipeline/ patches applied. Three jobs:
+Runs the real prover in this repository (crypto/, tally/, run_election.py).
+Three jobs:
 
   D10    --clean N: N clean elections, each from a different setup seed.
          The verifier must accept every one; a single rejection stops
@@ -15,8 +15,8 @@ with the pipeline/ patches applied. Three jobs:
   D7     --attribution DIR: verify the seven regenerated bundles unpacked
          under DIR and record which property each was rejected under.
 
-    python harness/full_runs.py --repo ~/evm --clean 30 --redirect 30 --ballots 40
-    python harness/full_runs.py --repo ~/evm --attribution ~/evm
+    python -m harness.full_runs --clean 30 --redirect 30 --ballots 40
+    python -m harness.full_runs --attribution .
 
 Results go to results/full_runs.json and results/attribution.json, which
 harness.tables picks up.
@@ -138,7 +138,7 @@ def attribution(root):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--repo", help="group repository root, with pipeline/ applied")
+    ap.add_argument("--repo", default=str(ROOT), help="project root (holds crypto/ and tally/)")
     ap.add_argument("--clean", type=int, default=0)
     ap.add_argument("--redirect", type=int, default=0)
     ap.add_argument("--ballots", type=int, default=40)
@@ -154,8 +154,6 @@ def main(argv=None):
         data = attribution(args.attribution)
         (results_dir / "attribution.json").write_text(json.dumps(data, indent=2) + "\n")
     if args.clean or args.redirect:
-        if not args.repo:
-            ap.error("--repo is required for --clean / --redirect")
         data = full_runs(args.repo, args.clean, args.redirect, args.ballots, args.k, args.seed)
         (results_dir / "full_runs.json").write_text(json.dumps(data, indent=2) + "\n")
         print(f"\nclean: {data['clean_runs']} runs, {data['false_rejections']} false rejections")

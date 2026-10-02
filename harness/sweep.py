@@ -64,7 +64,7 @@ def run_cell(args):
     if config == "C2" and adversary == "A0":
         row["analytic"] = 1 - (1 - float(p)) ** k
     elif config == "C0":
-        from baseline_c0 import c0_srs  # basket B, vendor/b10
+        from baseline_c0 import c0_srs  # basket B, baseline/
         row["analytic"] = float(c0_srs(ballots, k, ballots * p.numerator // p.denominator))
     elif config == "C1":
         row["analytic"] = 0.0
