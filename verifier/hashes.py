@@ -74,3 +74,27 @@ def partial_preimage(q_hash, trustee_index, candidate_index, big_a, h_j, partial
     ])
     assert len(preimage) == 2384, len(preimage)
     return preimage
+
+
+def randomness_commitment(q_hash, booth_id, serial, randomness, nonce):
+    """SPEC 10.1: K_s. Length 136 + 384m."""
+    if len(nonce) != 32:
+        raise ValueError("nonce is 32 bytes")
+    preimage = b"".join([label("EVOTE-RCOMMIT-v1"), q_hash, s32(booth_id), u64(serial),
+                         *(i2b(r) for r in randomness), nonce])
+    assert len(preimage) == 136 + 384 * len(randomness)
+    return hashlib.sha256(preimage).digest()
+
+
+def schedule_commitment(q_hash, booth_id, schedule_seed, num, den):
+    """SPEC 10.2: T. Exactly 144 bytes of preimage."""
+    preimage = b"".join([label("EVOTE-TESTSCHED-v1"), q_hash, s32(booth_id), schedule_seed,
+                         u64(num), u64(den)])
+    assert len(preimage) == 144, len(preimage)
+    return hashlib.sha256(preimage).digest()
+
+
+def is_scheduled(schedule_seed, serial, num, den):
+    """SPEC 10.2 per-serial draw, exact integer comparison."""
+    digest = hashlib.sha256(label("EVOTE-TESTDRAW-v1") + schedule_seed + u64(serial)).digest()
+    return b2i(digest[:8]) * den < num * 2**64
