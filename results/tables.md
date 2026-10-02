@@ -50,21 +50,23 @@ Detection rates are proportions over 2000 simulated elections of 200 ballots, wi
 
 | Attack | Hook | Expected | Verifier |
 |---|---|---|---|
-| Vote redirection | A8 | P3 | — |
-| Ballot stuffing | A9 | P4 | — |
-| Malformed ballot injection | B12 | P2 | — |
-| Tally manipulation | C10 | P5 | — |
-| Retroactive board edit | C11 | P1 | — |
-| (clean run) | - | Accept | — |
-| (configuration C1) | - | Accept, P3 not exercised | — |
+| Vote redirection | A8 | P3 | P3 |
+| Ballot stuffing | A9 | P4 | P4 |
+| Malformed ballot injection | B12 | P2 | P2 |
+| Tally manipulation | C10 | P5 | P5 |
+| Retroactive board edit | C11 | P1 | P1 |
+| (clean run) | - | Accept | Accept |
+| (configuration C1) | - | Accept, P3 not exercised | Accept, P3 not exercised |
 
 ## Table 6. Full-crypto runs (D10 and fast-model check)
 
 | Measure | Value |
 |---|---|
-| clean elections verified | — |
-| false rejections | — |
-| redirection runs, verifier agrees with model | — |
+| clean elections verified | 12 |
+| false rejections | 0 |
+| redirection runs, verifier agrees with model | 12 / 12 |
+| of which detected (P3) | 3 |
+| ballots per election, serials redirected per run | 40, 8 |
 
 ## Table 7. Per-ballot cost on the target hardware (A11)
 

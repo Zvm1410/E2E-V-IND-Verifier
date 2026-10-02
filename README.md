@@ -94,7 +94,7 @@ pytest                 # about 15 minutes, mostly 3072-bit exponentiations
 | SPEC revision 3 | Board schema, removal of the published nonces, tester's comparison (11.1). |
 | Prover fixes | Pre-poll commitments and schedule to SPEC 10, nonce leak, tester record, value-based export scan. See `docs/pipeline-changes.md`. |
 | D8, D9, D11 | Done for simulated results; both D9 sanity checks pass. |
-| D10, full-crypto check, attribution on regenerated boards | Scripts ready; run with `crypto/` and `tally/` present. |
+| D10, full-crypto check, attribution on regenerated boards | Done. 12 clean elections, 0 false rejections; 12 redirection runs, verifier agrees with the fast model on all 12 (3 detected); all seven bundles attributed correctly. |
 | A11 benchmark | `harness/bench.py`; the GUI's admin-panel benchmark (`app/services/benchmark.py`) is a stub and is not used for the paper. |
 
 ## Findings recorded during the build

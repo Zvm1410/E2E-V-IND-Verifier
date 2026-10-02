@@ -1,0 +1,417 @@
+{
+  "ballots": 40,
+  "k": 8,
+  "clean_runs": 12,
+  "false_rejections": 0,
+  "redirect_runs": 12,
+  "agree": 12,
+  "detected": 3,
+  "runs": [
+    {
+      "kind": "clean",
+      "seed": 20261002,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 603
+    },
+    {
+      "kind": "clean",
+      "seed": 20261003,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 602
+    },
+    {
+      "kind": "clean",
+      "seed": 20261004,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 603
+    },
+    {
+      "kind": "clean",
+      "seed": 20261005,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 608
+    },
+    {
+      "kind": "clean",
+      "seed": 20261006,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 592
+    },
+    {
+      "kind": "clean",
+      "seed": 20261007,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 589
+    },
+    {
+      "kind": "clean",
+      "seed": 20261008,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 589
+    },
+    {
+      "kind": "clean",
+      "seed": 20261009,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 596
+    },
+    {
+      "kind": "clean",
+      "seed": 20261010,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 587
+    },
+    {
+      "kind": "clean",
+      "seed": 20261011,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 589
+    },
+    {
+      "kind": "clean",
+      "seed": 20261012,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 589
+    },
+    {
+      "kind": "clean",
+      "seed": 20261013,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 595
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361002,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 597,
+      "redirected": [
+        6,
+        10,
+        11,
+        23,
+        24,
+        26,
+        32,
+        35
+      ],
+      "scheduled": [
+        1,
+        14,
+        25,
+        39
+      ],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361003,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 599,
+      "redirected": [
+        1,
+        14,
+        18,
+        19,
+        21,
+        29,
+        31,
+        39
+      ],
+      "scheduled": [
+        11,
+        26,
+        32
+      ],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361004,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 593,
+      "redirected": [
+        2,
+        6,
+        8,
+        14,
+        25,
+        33,
+        34,
+        36
+      ],
+      "scheduled": [
+        39,
+        40
+      ],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361005,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 600,
+      "redirected": [
+        4,
+        5,
+        9,
+        10,
+        17,
+        22,
+        28,
+        30
+      ],
+      "scheduled": [
+        6,
+        21
+      ],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361006,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 597,
+      "redirected": [
+        12,
+        16,
+        21,
+        26,
+        31,
+        32,
+        35,
+        38
+      ],
+      "scheduled": [],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361007,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 599,
+      "redirected": [
+        1,
+        4,
+        13,
+        15,
+        17,
+        23,
+        25,
+        31
+      ],
+      "scheduled": [],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361008,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 601,
+      "redirected": [
+        3,
+        10,
+        13,
+        16,
+        23,
+        26,
+        35,
+        38
+      ],
+      "scheduled": [
+        37,
+        40
+      ],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361009,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 604,
+      "redirected": [
+        12,
+        18,
+        19,
+        22,
+        27,
+        28,
+        29,
+        36
+      ],
+      "scheduled": [
+        3
+      ],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361010,
+      "accepted": true,
+      "failed_property": null,
+      "reason": null,
+      "P3": "passed",
+      "seconds": 643,
+      "redirected": [
+        3,
+        4,
+        5,
+        6,
+        9,
+        31,
+        38,
+        39
+      ],
+      "scheduled": [
+        24
+      ],
+      "predicted_detection": false,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361011,
+      "accepted": false,
+      "failed_property": "P3",
+      "reason": "opened candidate 1, tester selected 0",
+      "P3": "failed",
+      "seconds": 636,
+      "redirected": [
+        4,
+        6,
+        9,
+        10,
+        16,
+        26,
+        32,
+        33
+      ],
+      "scheduled": [
+        2,
+        10,
+        28,
+        38
+      ],
+      "predicted_detection": true,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361012,
+      "accepted": false,
+      "failed_property": "P3",
+      "reason": "opened candidate 0, tester selected 5",
+      "P3": "failed",
+      "seconds": 638,
+      "redirected": [
+        3,
+        7,
+        19,
+        21,
+        25,
+        26,
+        29,
+        30
+      ],
+      "scheduled": [
+        16,
+        25
+      ],
+      "predicted_detection": true,
+      "agrees": true
+    },
+    {
+      "kind": "redirect",
+      "seed": 20361013,
+      "accepted": false,
+      "failed_property": "P3",
+      "reason": "opened candidate 3, tester selected 2",
+      "P3": "failed",
+      "seconds": 642,
+      "redirected": [
+        11,
+        12,
+        17,
+        25,
+        26,
+        35,
+        36,
+        37
+      ],
+      "scheduled": [
+        5,
+        9,
+        11
+      ],
+      "predicted_detection": true,
+      "agrees": true
+    }
+  ]
+}
