@@ -10,10 +10,10 @@ run() {
     echo "=== $tag"
     rm -rf "out-$tag"
     python run_election.py --config "$config" --ballots "$BALLOTS" --out-dir "out-$tag" "$@"
-    python bundle_for_basket_d.py \
+    python export_bundle.py \
         --board "out-$tag/board.json" --sigs "out-$tag/signatures.json" \
         --tester "out-$tag/tester_selections.json" --config "$config" \
-        --out-dir "for-basket-d-$tag" --tar "for-basket-d-$tag.tar.gz"
+        --out-dir "bundle-$tag" --tar "bundle-$tag.tar.gz"
 }
 
 STD=config/election.json
@@ -25,4 +25,4 @@ run C10-tally-tamper      "$STD" --tamper-tally
 run C11-retroactive-edit  "$STD" --retroactive-edit
 run C1-no-test-ballots    config/election_c1.json
 
-echo "Done. Send the seven for-basket-d-*.tar.gz files."
+echo "Done: seven bundle-*/ directories and bundle-*.tar.gz files."

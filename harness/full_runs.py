@@ -13,7 +13,7 @@ Three jobs:
          every time; that agreement is what licenses harness.sim for the
          D9 sweep.
   D7     --attribution DIR: verify the seven regenerated bundles unpacked
-         under DIR and record which property each was rejected under.
+         (bundle-<tag>/) under DIR and record each verdict.
 
     python -m harness.full_runs --clean 30 --redirect 30 --ballots 40
     python -m harness.full_runs --attribution .
@@ -121,7 +121,7 @@ def full_runs(repo, clean, redirect, ballots, k, base_seed):
 def attribution(root):
     out = {}
     for key, tag in BUNDLES.items():
-        candidates = [Path(root) / f"for-basket-d-{tag}", Path(root) / tag]
+        candidates = [Path(root) / f"bundle-{tag}", Path(root) / tag]
         d = next((c for c in candidates if (c / "board.json").exists()), None)
         if d is None:
             print(f"{tag}: not found, skipped")
@@ -145,7 +145,7 @@ def main(argv=None):
     ap.add_argument("--k", type=int, default=3, help="serials redirected per run")
     ap.add_argument("--seed", type=int, default=20261002)
     ap.add_argument("--attribution", metavar="DIR",
-                    help="directory holding the unpacked for-basket-d-<tag> bundles")
+                    help="directory holding the bundle-<tag>/ directories")
     args = ap.parse_args(argv)
     results_dir = ROOT / "results"
     results_dir.mkdir(exist_ok=True)

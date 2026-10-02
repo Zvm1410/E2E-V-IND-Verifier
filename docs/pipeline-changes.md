@@ -17,7 +17,9 @@ received (commit b2feb5e), so `git log -p --follow <file>` shows every change.
 | | Writes `tester_selections.json` | SPEC 11.1: the tester's record of what they pressed on each challenged ballot. Not part of the board. |
 | | Runs a value-based secrets scan on the export | Handbook C9. |
 | `board/export.py` | `scan_for_secret_values` | The old scan only checked key names, so a secret under an ordinary key (as the nonce was) passed. |
-| `bundle_for_basket_d.py` | Copies the tester record into the bundle; README text matches SPEC | The old README described P3 to P5 differently from SPEC 16. |
+| `export_bundle.py` (was `bundle_for_basket_d.py`) | Copies the tester record into the bundle; describes the files only | The old README described P3 to P5 differently from SPEC 16. |
+| `app/services/benchmark.py` | Real timings and the process's peak RSS | It reported an invented proof time (`cast_ms * 0.7`) and memory from `random.uniform`. |
+| `app/ui/screens/admin_screen.py` | Challenge refused on unscheduled serials; the re-encryption check is actually run and its result shown; bundle labels renamed | The panel printed "re-encryption stub matches" without checking, and allowed spoils the schedule never drew. |
 | `config/election_c1.json` | `test_rate.num = 0` | Configuration C1 (handbook C12). |
 | `make_bundles.sh` | Builds all seven bundles | One command for the clean run, five attacks and C1. |
 
@@ -29,6 +31,6 @@ From the project root:
 ./make_bundles.sh          # BALLOTS=60 by default
 ```
 
-This writes `for-basket-d-<tag>.tar.gz` for clean, A8, A9, B12, C10, C11
+This writes `bundle-<tag>/` and `bundle-<tag>.tar.gz` for clean, A8, A9, B12, C10, C11
 and C1. At a 1/20 test rate, 60 ballots gives about three scheduled test
 ballots per run.

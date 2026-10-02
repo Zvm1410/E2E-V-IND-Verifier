@@ -26,7 +26,7 @@ The normative description is [`spec/SPEC.md`](spec/SPEC.md) (revision 3).
 | `tally/` | Trusted dealer, Shamir sharing, threshold decryption, decryption proofs | C |
 | `board/` | Bulletin board, digest, Ed25519 multisignature, export checks | C |
 | `run_election.py` | One election end to end, with the attack flags | C |
-| `bundle_for_basket_d.py`, `make_bundles.sh` | Package and regenerate the evaluation boards | C, D |
+| `export_bundle.py`, `make_bundles.sh` | Package and regenerate the evaluation boards | C, D |
 | `verifier/` | Independent verifier, P1 to P5 with attribution | D |
 | `harness/` | Simulated elections (D8), sweep (D9), full-crypto runs (D10), tables (D11), Pi benchmark | D |
 | `results/` | Sweep output and `tables.md` | D |

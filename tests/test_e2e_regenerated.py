@@ -1,7 +1,6 @@
 """End-to-end attribution on boards regenerated with pipeline/make_bundles.sh.
 
-Unpack the seven for-basket-d-<tag>.tar.gz files into
-tests/fixtures/boards-r3/<tag>/. Each test is skipped until its board is
+Copy the seven bundle-<tag>/ directories into tests/fixtures/boards-r3/<tag>/. Each test is skipped until its board is
 there. Expected outcomes are handbook D7 / SPEC 16, plus C1 (handbook C12).
 """
 

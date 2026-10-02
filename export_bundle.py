@@ -1,37 +1,16 @@
-"""Package only the artifacts Basket D needs, and nothing else.
+"""Package one election's exported artefacts for verification.
 
-Basket D is the independent verifier. Per the project scope it must
-NOT see our prover code, and per the handbook it reads only the
-exported bulletin board plus the signatures over its digest. This
-script bundles those files into ``for-basket-d/`` alongside a short
-README that names what each file is and how D re-derives the base
-hash Q.
+Writes a directory and a .tar.gz holding exactly what crosses the air gap
+and what the verifier consumes:
 
-What goes into the bundle
--------------------------
-* ``board.json``          - the full SPEC section 14 bulletin board
-                            written by run_election.py, with 12
-                            top-level keys populated (election_config,
-                            base_hash, trustee_setup, authority_keys,
-                            prepoll, ballots, spoils, poll_register,
-                            schedule_opening, tally_aggregate,
-                            decryption_transcript, tally_declaration).
-* ``signatures.json``     - officer + agent Ed25519 signatures over
-                            ``L("EVOTE-SIG-v1") || digest``.
-* ``election.json``       - the election configuration the board was
-                            produced against. D needs this to
-                            independently recompute Q via its own
-                            implementation of ``compute_base_hash``.
-* ``README.md``           - short handover note listing the files and
-                            pointing at the SPEC.
+* ``board.json``              the SPEC section 14 bulletin board
+* ``signatures.json``         officer and agent signatures over its digest
+* ``election.json``           the configuration it was produced from
+* ``tester_selections.json``  the tester's record (SPEC 11.1), not part of the board
+* ``MANIFEST.json``           size and SHA-256 of each file
 
-What does NOT go in
--------------------
-* Any source code from crypto/, tally/, board/, app/, tests/.
-* Any private material: sk, trustee shares, schedule seed before
-  poll close, per-ballot nonces of un-spoiled ballots, private
-  attack log. ``board.export.scan_for_secrets`` re-runs here as a
-  final safety net; the bundle is refused if it finds anything.
+The board is scanned for forbidden fields first and the bundle is refused
+on a hit. No source code and no private material goes in.
 """
 
 from __future__ import annotations
@@ -51,7 +30,7 @@ import crypto  # noqa: F401  (path-shim side effect)
 from board.export import scan_for_secrets  # noqa: E402
 
 
-HANDOVER_README = """# Bulletin board bundle for the independent verifier
+BUNDLE_README = """# Bulletin board bundle for the independent verifier
 
 ## Files
 
@@ -76,14 +55,14 @@ the first property that fails.
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Bundle the artifacts Basket D consumes."
+        description="Package one election for verification."
     )
     parser.add_argument("--board",   default="out/board.json")
     parser.add_argument("--sigs",    default="out/signatures.json")
     parser.add_argument("--config",  default="config/election.json")
     parser.add_argument("--tester",  default="out/tester_selections.json")
-    parser.add_argument("--out-dir", default="for-basket-d")
-    parser.add_argument("--tar",     default="for-basket-d.tar.gz",
+    parser.add_argument("--out-dir", default="bundle")
+    parser.add_argument("--tar",     default="bundle.tar.gz",
                         help="Also write a tar.gz of the bundle for handover.")
     args = parser.parse_args()
 
@@ -124,7 +103,7 @@ def main() -> int:
     tester_p = Path(args.tester).resolve()
     if tester_p.exists():
         shutil.copy2(tester_p, out_dir / "tester_selections.json")
-    (out_dir / "README.md").write_text(HANDOVER_README, encoding="utf-8")
+    (out_dir / "README.md").write_text(BUNDLE_README, encoding="utf-8")
 
     # A manifest of file sizes and SHA-256 digests, so D can verify
     # nothing was truncated in transit.
@@ -154,7 +133,7 @@ def main() -> int:
     for f in manifest["files"]:
         print(f"    {f['sha256'][:16]}...  {f['size_bytes']:>10} bytes  {f['name']}")
     print(f"[bundle] Wrote {tar_p} ({tar_p.stat().st_size} bytes)")
-    print("[bundle] Ready to hand to Basket D.")
+    print("[bundle] Ready.")
     return 0
 
 

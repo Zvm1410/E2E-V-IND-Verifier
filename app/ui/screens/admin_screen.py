@@ -129,8 +129,8 @@ class AdminScreen(QWidget):
         self.bundle_tag_input.setText("clean")
         layout.addWidget(self.bundle_tag_input)
 
-        self.bundle_button = QPushButton("BUNDLE FOR BASKET D")
-        self.bundle_button.clicked.connect(self.bundle_for_basket_d)
+        self.bundle_button = QPushButton("EXPORT BUNDLE")
+        self.bundle_button.clicked.connect(self.export_bundle)
         self.bundle_button.setEnabled(False)
         layout.addWidget(self.bundle_button)
 
@@ -188,8 +188,18 @@ class AdminScreen(QWidget):
             self.challenge_output.setPlainText("No ballot available to challenge.")
             return
 
+        if artifacts.serial not in service.scheduled_tests:
+            # SPEC 10.2: only scheduled serials are challenged. A spoil on any
+            # other serial is a P3 failure on the board.
+            self.challenge_output.setPlainText(
+                f"Serial {artifacts.serial} is not a scheduled test ballot; "
+                "challenge refused (SPEC 10.2).")
+            return
+
         service.append_spoil(artifacts, artifacts.candidate_index)
         self.window.poll_state.spoil_current_ballot()
+        spoil = service.board["spoils"][-1]
+        reencrypts = service.verify_spoil_record(spoil)
 
         lines = [
             f"Ballot serial: {artifacts.serial}",
@@ -198,7 +208,9 @@ class AdminScreen(QWidget):
             "Randomness vector:",
             *artifacts.randomness,
             "",
-            "Sanity check: re-encryption stub matches published ciphertext components.",
+            "Re-encryption check (SPEC 11): "
+            + ("all published ciphertext components match."
+               if reencrypts else "MISMATCH, this record would be rejected."),
         ]
         self.challenge_output.setPlainText("\n".join(lines))
         self.refresh()
@@ -212,23 +224,23 @@ class AdminScreen(QWidget):
         )
         self.benchmark_progress.setValue(500)
 
-        enc = result.encryption_times_ms
-        proof = result.proof_times_ms
-        cast = result.cast_times_ms
+        def stats(values):
+            ordered = sorted(values)
+            return (f"{ordered[0]:.0f} / {ordered[len(ordered) // 2]:.0f} / "
+                    f"{ordered[-1]:.0f}")
+
         self.benchmark_output.setPlainText(
             "\n".join(
                 [
                     f"Candidates (m): {result.candidate_count}",
                     f"Ballots run: {result.ballot_count}",
-                    f"Encryption ms  min/avg/max: {min(enc):.2f} / "
-                    f"{sum(enc)/len(enc):.2f} / {max(enc):.2f}",
-                    f"Proof ms       min/avg/max: {min(proof):.2f} / "
-                    f"{sum(proof)/len(proof):.2f} / {max(proof):.2f}",
-                    f"Cast latency   min/avg/max: {min(cast):.2f} / "
-                    f"{sum(cast)/len(cast):.2f} / {max(cast):.2f}",
-                    f"Peak memory (simulated): {result.peak_memory_mb:.1f} MB",
+                    "                     min / median / max (ms)",
+                    f"encrypt_and_prove    {stats(result.encrypt_prove_times_ms)}",
+                    f"record and board     {stats(result.record_times_ms)}",
+                    f"cast latency         {stats(result.cast_times_ms)}",
+                    f"Peak RSS (process): {result.peak_memory_mb:.1f} MB",
                     "",
-                    "Distribution tails are visible in the admin histogram stub.",
+                    "Paper figures: python -m harness.bench (percentiles per m).",
                 ]
             )
         )
@@ -415,16 +427,16 @@ class AdminScreen(QWidget):
                 f"  board     : {board_path.resolve()}\n"
                 f"  signatures: {sig_path.resolve()}"
                 f"{c11_note}\n\n"
-                f"Now set a bundle tag and click BUNDLE FOR BASKET D."
+                f"Now set a bundle tag and click EXPORT BUNDLE."
             )
             self.export_button.setEnabled(False)
             self.bundle_button.setEnabled(True)
         except Exception as exc:  # noqa: BLE001
             QMessageBox.critical(self, "Export Failed", str(exc))
 
-    def bundle_for_basket_d(self) -> None:
+    def export_bundle(self) -> None:
         """Package board.json + signatures.json + election.json into
-        for-basket-d/<tag>/ and a tar.gz for handoff to the verifier."""
+        bundle-<tag>/ and a tar.gz for the verifier."""
         import shutil
         import tarfile
         from pathlib import Path
@@ -454,7 +466,7 @@ class AdminScreen(QWidget):
                     "Refusing to bundle."
                 )
 
-            bundle_dir_name = f"for-basket-d-{tag_safe}"
+            bundle_dir_name = f"bundle-{tag_safe}"
             bundle_dir = Path(bundle_dir_name)
             if bundle_dir.exists():
                 shutil.rmtree(bundle_dir)
@@ -470,7 +482,7 @@ class AdminScreen(QWidget):
                 tar.add(bundle_dir, arcname=bundle_dir.name)
 
             self.lifecycle_output.setPlainText(
-                f"Bundle ready for Basket D.\n"
+                f"Bundle ready.\n"
                 f"  folder: {bundle_dir.resolve()}\n"
                 f"  tar.gz: {tar_path.resolve()} "
                 f"({tar_path.stat().st_size} bytes)\n\n"

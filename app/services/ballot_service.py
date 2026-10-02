@@ -35,7 +35,7 @@ admin screen's diagnostic dump keeps rendering. What changed inside:
   from ``[1, q)`` with ``random.Random(config.seed)``. The commitment
   is SHA-256 over ``I2B(serial, 8) || S32(booth_id) || I2B(r_1) || ...
   || I2B(r_m) || nonce``, matching the SPEC section 10.1 preimage
-  structure closely enough that Basket D can recompute it.
+  structure closely enough that the verifier can recompute it.
 
 Ownership discipline (per handbook Task 4.1): this module wires A -> B
 -> C. It does not implement cryptography. Every arithmetic operation
