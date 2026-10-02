@@ -56,7 +56,7 @@ from app.services.poll_state import BallotSession, PollState
 
 # --- Basket B (crypto) --------------------------------------------------
 from crypto.group import P as p_mod, Q as q_ord, G as g_gen
-from crypto.encoding import I2B, S32
+from crypto.encoding import I2B, L, S32
 from crypto.base_hash import compute_base_hash
 from crypto.encrypt_and_prove import encrypt_and_prove as b_encrypt_and_prove
 from crypto.record import build_ballot_record, hex384
@@ -297,14 +297,13 @@ class BallotService:
 
             r_i uniform in [1, q)    (SPEC section 7 / handbook A7b)
             nonce = 32 random bytes
-            commitment = SHA-256(I2B(serial,8) || S32(booth_id)
-                                 || I2B(r_1) || ... || I2B(r_m)
-                                 || nonce)
+            K_s = SHA-256(L("EVOTE-RCOMMIT-v1") || Q || S32(booth_id)
+                          || U64(serial) || I2B(r_1) || ... || I2B(r_m)
+                          || nonce)                        (SPEC 10.1)
 
-        The schedule seed is a 32-byte value drawn from the same RNG,
-        committed as SHA-256(schedule_seed). The schedule (which serials
-        are test ballots) is derived from that seed by an HMAC-like walk
-        until enough serials are drawn to hit the target test rate.
+        The schedule seed is a 32-byte value drawn from the same RNG and
+        committed as T of SPEC 10.2. Serial s is a test ballot iff the
+        SPEC 10.2 per-serial draw selects it.
         """
         ballots = int(self.config.ballots_expected)
         m = self.config.candidate_count
@@ -328,8 +327,10 @@ class BallotService:
             nonce_hex = nonce_raw.hex()
 
             digest = hashlib.sha256()
-            digest.update(s.to_bytes(8, "big"))
+            digest.update(L("EVOTE-RCOMMIT-v1"))
+            digest.update(self.Q)
             digest.update(booth_bytes)
+            digest.update(s.to_bytes(8, "big"))
             for r in r_int:
                 digest.update(I2B(r))
             digest.update(nonce_raw)
@@ -346,14 +347,18 @@ class BallotService:
             sched = b"\x01" + rng.randbytes(31)
         # NOTE: schedule seed is SECRET until poll close.
         self._schedule_seed_raw: bytes = sched
-        self.schedule_commitment = hashlib.sha256(sched).hexdigest()
+        num, den = self.config.test_rate_num, self.config.test_rate_den
+        self.schedule_commitment = hashlib.sha256(
+            L("EVOTE-TESTSCHED-v1") + self.Q + booth_bytes + sched
+            + num.to_bytes(8, "big") + den.to_bytes(8, "big")
+        ).hexdigest()
 
-        # Derive the deterministic test schedule.
+        # Derive the test schedule (SPEC 10.2).
         self.scheduled_tests = _derive_schedule(
             seed=sched,
             ballots_expected=ballots,
-            num=self.config.test_rate_num,
-            den=self.config.test_rate_den,
+            num=num,
+            den=den,
         )
 
     # ------------------------------------------------------------------
@@ -664,10 +669,11 @@ class BallotService:
             commit = self.pre_poll_commitments.get(s)
             if commit is None:
                 continue
+            # The nonce stays secret until the serial is spoiled (SPEC
+            # 10.1, handbook C9); only K_s is published.
             commits.append({
                 "ballot_serial": s,
                 "commitment": commit,
-                "nonce_commitment": self.pre_poll_nonces.get(s, ""),
             })
         bb.append_prepoll(
             self.board,
@@ -881,22 +887,20 @@ def _derive_schedule(
     num: int,
     den: int,
 ) -> set[int]:
-    """Deterministically pick ``num/den * ballots_expected`` serials.
+    """SPEC 10.2: serial s is a test ballot iff
 
-    Uses SHA-256 walks on ``seed`` as a PRF stream. No hidden state, no
-    floating point (handbook A3: *"The rate is two integers, not a
-    decimal. Floating point must never reach a hashed value."*).
+        B2I(SHA-256(L("EVOTE-TESTDRAW-v1") || seed || U64(s))[0:8]) * den
+            < num * 2^64
+
+    Each serial is drawn independently, so the number of test ballots
+    varies around num/den * N rather than being fixed. Exact integer
+    arithmetic; no floating point reaches the comparison.
     """
-    if num <= 0:
-        return set()
-    target = (num * ballots_expected) // den
     picks: set[int] = set()
-    counter = 0
-    while len(picks) < target and counter < ballots_expected * 8:
-        buf = hashlib.sha256(seed + counter.to_bytes(8, "big")).digest()
-        # 8 bytes -> one 64-bit unsigned int -> map to a serial in [1, N]
-        val = int.from_bytes(buf[:8], "big")
-        serial = (val % ballots_expected) + 1
-        picks.add(serial)
-        counter += 1
+    for s in range(1, ballots_expected + 1):
+        digest = hashlib.sha256(
+            L("EVOTE-TESTDRAW-v1") + seed + s.to_bytes(8, "big")
+        ).digest()
+        if int.from_bytes(digest[:8], "big") * den < num * 2**64:
+            picks.add(s)
     return picks

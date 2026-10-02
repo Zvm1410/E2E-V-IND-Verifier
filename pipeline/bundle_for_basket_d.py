@@ -51,56 +51,26 @@ import crypto  # noqa: F401  (path-shim side effect)
 from board.export import scan_for_secrets  # noqa: E402
 
 
-HANDOVER_README = """# Bulletin board handover for Basket D
-
-This bundle contains only what the independent verifier (Basket D)
-consumes. No prover source code is included; per the project scope,
-the verifier must be built without visibility into crypto/, tally/,
-board/ or app/.
+HANDOVER_README = """# Bulletin board bundle for the independent verifier
 
 ## Files
 
-- **board.json** - the SPEC section 14 bulletin board. Twelve
-  top-level keys, each with the shape agreed on Day 2 (see SPEC).
-- **signatures.json** - officer + agent Ed25519 signatures over the
-  32-byte-padded label `EVOTE-SIG-v1` concatenated with the SHA-256
-  board digest.
-- **election.json** - the election configuration. Used by the verifier
-  only to recompute the base hash Q from its own implementation of
-  the SPEC section 5.2 preimage, and to independently know
-  `(n, t, agents, k, candidates)`.
+- **board.json** - the SPEC section 14 bulletin board (revision 3).
+- **signatures.json** - officer and agent Ed25519 signatures over
+  `L("EVOTE-SIG-v1") || digest`, SPEC section 15.3.
+- **election.json** - the configuration the board was produced from.
+- **tester_selections.json** - the tester's own record of what they
+  pressed on each challenged ballot (SPEC section 11.1). Not part of the
+  board and not covered by its signatures; it is the tester's evidence.
 
-## Verifier properties to check (in order)
-
-Per the handbook (SPEC section 8.3 / verifier properties list):
-
-1. **P1** - group parameters, base hash, encoding round-trips, subgroup
-   membership of every element on the board.
-2. **P2** - every ballot record is well-formed and every validity proof
-   verifies against the base hash Q recomputed from `election.json`
-   (not from `board.base_hash`).
-3. **P3** - the test schedule opens correctly: `SHA-256(schedule_seed) ==
-   test_schedule_commitment`, and every scheduled test serial appears
-   as a spoil record.
-4. **P4** - the pre-poll section holds one commitment per serial in
-   `[1, ballots_expected]` and the schedule commitment; a board
-   missing any serial fails here.
-5. **P5** - the poll register is consistent with the board:
-   `ballots_issued == count(ballots)`,
-   `ballots_spoiled == count(spoils)`, and
-   `ballots_counted == ballots_issued - ballots_spoiled`.
-
-## Digest & signature check
+## Verify
 
 ```
-digest = SHA-256( L("EVOTE-BOARD-v1")  ||  canonical_json(board_without_signature_fields) )
+python -m verifier board.json signatures.json --tester tester_selections.json
 ```
 
-`canonical_json` = sorted keys, no whitespace, ASCII escaping, group
-elements and exponents as 768-character lowercase hex strings.
-
-`signatures.json` must show `k` valid agent signatures plus the officer
-signature; `k-1` fails.
+The verifier checks P1 to P5 in the order of SPEC section 16 and names
+the first property that fails.
 """
 
 
@@ -111,6 +81,7 @@ def main() -> int:
     parser.add_argument("--board",   default="out/board.json")
     parser.add_argument("--sigs",    default="out/signatures.json")
     parser.add_argument("--config",  default="config/election.json")
+    parser.add_argument("--tester",  default="out/tester_selections.json")
     parser.add_argument("--out-dir", default="for-basket-d")
     parser.add_argument("--tar",     default="for-basket-d.tar.gz",
                         help="Also write a tar.gz of the bundle for handover.")
@@ -150,6 +121,9 @@ def main() -> int:
     shutil.copy2(board_p, out_dir / "board.json")
     shutil.copy2(sigs_p,  out_dir / "signatures.json")
     shutil.copy2(cfg_p,   out_dir / "election.json")
+    tester_p = Path(args.tester).resolve()
+    if tester_p.exists():
+        shutil.copy2(tester_p, out_dir / "tester_selections.json")
     (out_dir / "README.md").write_text(HANDOVER_README, encoding="utf-8")
 
     # A manifest of file sizes and SHA-256 digests, so D can verify

@@ -60,8 +60,6 @@ def main() -> int:
                         help="Path to election configuration JSON.")
     parser.add_argument("--ballots", type=int, default=20,
                         help="Number of ballots to cast (test run).")
-    parser.add_argument("--spoils", type=int, default=2,
-                        help="Number of ballots to challenge/spoil.")
     parser.add_argument("--out-dir", default="out",
                         help="Directory to write board.json / signatures.json.")
     parser.add_argument("--seed-offset", type=int, default=0,
@@ -71,6 +69,9 @@ def main() -> int:
                         help="If >0, enable A9 ballot-stuffing hook with N ballots.")
     parser.add_argument("--redirect-to", type=int, default=None,
                         help="If set, enable A8 vote-redirection to this index.")
+    parser.add_argument("--redirect-serials", type=str, default=None,
+                        help="Comma-separated serials to redirect, each to the next "
+                             "candidate after the voter's choice (harness full runs).")
     parser.add_argument("--verify-spoils", action="store_true",
                         help="Assert every spoil record round-trips (SPEC 11).")
     parser.add_argument("--verify-tally", type=str, default=None,
@@ -134,27 +135,19 @@ def main() -> int:
 
     # -------- 5. Cast ballots ----------------------------------------
     ballots_to_cast = min(int(args.ballots), cfg.ballots_expected)
-    spoils_wanted = min(int(args.spoils), ballots_to_cast)
     # Deterministic per-ballot voter choices so ``--verify-tally`` can
     # assert an expected result.
     voter_rng = random.Random(cfg.seed ^ 0xDECAFBAD ^ args.seed_offset)
+    # The tester challenges exactly the serials the committed schedule
+    # drew (SPEC 10.2), no more and no fewer. A spoil on any other serial,
+    # or a scheduled serial left unchallenged, is a P3 failure.
+    spoil_serials = {s for s in service.scheduled_tests
+                     if 1 <= s <= ballots_to_cast}
     print(f"[5] Casting {ballots_to_cast} ballots "
-          f"({spoils_wanted} spoiled)")
-
-    # Pick which serials to spoil. Prefer the scheduled test set; if
-    # the tester asks for more spoils than the schedule contains,
-    # spoil the first ``k`` scheduled + additional randomly-chosen
-    # serials so we cover the "no schedule at all" case too.
-    scheduled = sorted(s for s in service.scheduled_tests
-                       if 1 <= s <= ballots_to_cast)
-    if len(scheduled) >= spoils_wanted:
-        spoil_serials = set(scheduled[:spoils_wanted])
-    else:
-        spoil_serials = set(scheduled)
-        remaining = [s for s in range(1, ballots_to_cast + 1)
-                     if s not in spoil_serials]
-        voter_rng.shuffle(remaining)
-        spoil_serials.update(remaining[: spoils_wanted - len(spoil_serials)])
+          f"({len(spoil_serials)} scheduled for challenge: {sorted(spoil_serials)})")
+    # SPEC 11.1: the tester's own record of what they pressed on each
+    # challenged ballot. Never written to the board.
+    tester_selections: Dict[int, int] = {}
 
     intended_tally: Counter[int] = Counter()
         # ---- B12 malformed ballot injection --------------------------
@@ -188,6 +181,8 @@ def main() -> int:
         _bb.append_ballot(service.board, mal_record)
         args.force_sign = True
  
+    redirect_serials = ({int(x) for x in args.redirect_serials.split(",") if x}
+                        if args.redirect_serials else set())
     for serial in range(1, ballots_to_cast + 1):
         session = poll_state.begin_ballot()
         assert session.serial == serial, (
@@ -197,10 +192,16 @@ def main() -> int:
         poll_state.mark_selection(chosen)
         poll_state.confirm_selection()
 
+        if redirect_serials:
+            # Targeted A8: only the listed serials, each to a different candidate.
+            service.attack_config.vote_redirection_enabled = serial in redirect_serials
+            service.attack_config.redirect_to_index = (chosen + 1) % cfg.candidate_count
+
         artifacts = service.encrypt_and_prove(chosen)
 
         if serial in spoil_serials:
             # SPEC section 11: spoil this serial. Do NOT count it.
+            tester_selections[serial] = chosen
             service.append_spoil(artifacts, artifacts.candidate_index)
             poll_state.spoil_current_ballot()
         else:
@@ -389,14 +390,31 @@ def main() -> int:
             a = b0["ciphertexts"][0]["alpha"]
             b0["ciphertexts"][0]["alpha"] = ("f" if a[0] != "f" else "0") + a[1:]
             bb.write_board(service.board, str(board_out))
+    # The machine's private attack log (handbook A8): for the harness only,
+    # never bundled or exported.
+    (out_dir / "private_attack_log.json").write_text(
+        json.dumps(service.private_log.entries, indent=2) + "\n")
+    tester_out = out_dir / "tester_selections.json"
+    tester_out.write_text(json.dumps(
+        {str(k): v for k, v in sorted(tester_selections.items())}, indent=2) + "\n")
     print(f"    digest          : {digest_hex}")
     print(f"    board written   : {board_out}")
     print(f"    sigs written    : {sig_out}")
+    print(f"    tester record   : {tester_out} (SPEC 11.1, not part of the board)")
 
     # Verify the exported files contain no forbidden material.
     print("[12] Verifying export contains no secrets (board.export.scan_for_secrets)")
-    from board.export import export_files
+    from board.export import export_files, scan_for_secret_values
     export_files(str(board_out), str(sig_out))
+    spoiled = {sp["ballot_serial"] for sp in service.board.get("spoils", [])}
+    shares = service.trustee_setup.shares
+    shares = shares.values() if isinstance(shares, dict) else shares
+    secret_hex = [
+        format(share if isinstance(share, int) else share[-1], "x") for share in shares
+    ] + [
+        service.pre_poll_nonces[s] for s in service.pre_poll_nonces if s not in spoiled
+    ]
+    scan_for_secret_values(str(board_out), secret_hex)
 
     banner("ELECTION COMPLETED SUCCESSFULLY")
     return 0

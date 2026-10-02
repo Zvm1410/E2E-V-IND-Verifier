@@ -1,0 +1,44 @@
+{
+  "election_id": "SPACE2026-DEMO",
+  "booth_id": "BOOTH-001",
+  "candidates": [
+    {
+      "index": 0,
+      "candidate_id": "CAND-A"
+    },
+    {
+      "index": 1,
+      "candidate_id": "CAND-B"
+    },
+    {
+      "index": 2,
+      "candidate_id": "CAND-C"
+    },
+    {
+      "index": 3,
+      "candidate_id": "CAND-D"
+    },
+    {
+      "index": 4,
+      "candidate_id": "CAND-E"
+    },
+    {
+      "index": 5,
+      "candidate_id": "NOTA"
+    }
+  ],
+  "trustees": {
+    "n": 5,
+    "t": 3
+  },
+  "authorities": {
+    "agents": 4,
+    "k": 2
+  },
+  "test_rate": {
+    "num": 0,
+    "den": 20
+  },
+  "ballots_expected": 200,
+  "seed": 20260804
+}
