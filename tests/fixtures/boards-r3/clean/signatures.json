@@ -1,0 +1,22 @@
+{
+    "digest": "98c527ed2ac093f3ff4051326c6acbe382b2747797482f1f18dc2d269e0f5b40",
+    "officer_signature": "46b19bd34312e3399ab3807026edd09da6654bb86cc4eb054ed551034b2c0e0b93b1297f18645738c249e9f34c02e7d6ed5cafe66ec5149a4ac9cfcb2cc4da0a",
+    "agent_signatures": [
+        {
+            "agent_index": 0,
+            "signature": "a2b4dd802169a623db0808c3563b439cf5158b05b953c948f600e6d27cdf5e5ecd201d4d8f85a63f044c2b8f3cc3cfbd0e76137937d24bc66d1e9cbe521f030c"
+        },
+        {
+            "agent_index": 1,
+            "signature": "e017ee680c8c4e2189f155d930ee92679f426a1612da3fe730fef6e6a193900f797321baeaa01df516b6e985e5dfb31140f13305b8e2ec6c331d928a33599607"
+        },
+        {
+            "agent_index": 2,
+            "signature": "4102795ffd87be3677739c3feaa8528b8c8083eab23c77693ca24a1b09046e53f5257c092f6a4fd7c939338f8bd237c4a34f6756eb86c495d2324b0f21c9cc06"
+        },
+        {
+            "agent_index": 3,
+            "signature": "4773ac897709e07ee7b75168528abd591cc0843ae6750fd2517476d2484dd1def5db77d51d30ecdbe5ac88ef6d122d5a885d23f5a007198d134521d6e7566804"
+        }
+    ]
+}
